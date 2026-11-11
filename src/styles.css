@@ -1,0 +1,482 @@
+:root {
+  --фон: #14161a;
+  --панель: #1c1f25;
+  --панель2: #23272f;
+  --граница: #2e333c;
+  --текст: #e8e6e1;
+  --текст2: #9aa0ab;
+  --акцент: #f0b429;
+  --акцент-тёмный: #8a6512;
+  --опасно: #e0563f;
+  --успех: #5fb87a;
+  --радиус: 12px;
+  --радиус-мал: 8px;
+  --тень: 0 8px 30px rgba(0, 0, 0, 0.45);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  background: var(--фон);
+  color: var(--текст);
+  overflow: hidden;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--панель2);
+  border: 1px solid var(--граница);
+  border-radius: var(--радиус-мал);
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+}
+button:hover {
+  background: #2b3038;
+  border-color: #3c434e;
+}
+button:active {
+  transform: translateY(1px);
+}
+button.активна {
+  background: var(--акцент);
+  border-color: var(--акцент);
+  color: #201a09;
+  font-weight: 600;
+}
+button.главная {
+  background: var(--акцент);
+  border-color: var(--акцент);
+  color: #201a09;
+  font-weight: 600;
+  padding: 10px 18px;
+}
+button.тихая {
+  background: transparent;
+  border-color: transparent;
+  color: var(--текст2);
+}
+button.тихая:hover {
+  color: var(--текст);
+  background: #23272f;
+}
+button.опасная:hover {
+  border-color: var(--опасно);
+  color: #ffd9d1;
+}
+
+input,
+select {
+  font: inherit;
+  color: inherit;
+  background: #14171c;
+  border: 1px solid var(--граница);
+  border-radius: var(--радиус-мал);
+  padding: 8px 10px;
+  width: 100%;
+}
+input:focus,
+select:focus {
+  outline: none;
+  border-color: var(--акцент);
+}
+
+.экран-центр {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 40px;
+}
+
+.логотип {
+  text-align: center;
+}
+.логотип h1 {
+  margin: 0;
+  font-size: 46px;
+  letter-spacing: -0.5px;
+}
+.логотип h1 span {
+  color: var(--акцент);
+}
+.логотип p {
+  margin: 10px 0 0;
+  color: var(--текст2);
+  font-size: 16px;
+}
+
+.карточки {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.карточка {
+  width: 290px;
+  padding: 26px;
+  border-radius: var(--радиус);
+  background: linear-gradient(160deg, #23272f, #1a1d23);
+  border: 1px solid var(--граница);
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.карточка:hover {
+  transform: translateY(-3px);
+  border-color: var(--акцент);
+  box-shadow: var(--тень);
+}
+.карточка h2 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+.карточка p {
+  margin: 0;
+  color: var(--текст2);
+  font-size: 14px;
+  line-height: 1.5;
+}
+.карточка .значок {
+  font-size: 30px;
+  margin-bottom: 12px;
+}
+
+/* ---------------- редактор ---------------- */
+
+.редактор {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 348px;
+  grid-template-rows: 52px 1fr 46px;
+  grid-template-areas:
+    'шапка шапка'
+    'сцена панель'
+    'низ низ';
+}
+.шапка {
+  grid-area: шапка;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  background: var(--панель);
+  border-bottom: 1px solid var(--граница);
+}
+.шапка .название {
+  font-weight: 600;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.сцена {
+  grid-area: сцена;
+  position: relative;
+  background: #171a1f;
+}
+.панель {
+  grid-area: панель;
+  background: var(--панель);
+  border-left: 1px solid var(--граница);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.низ {
+  grid-area: низ;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  background: var(--панель);
+  border-top: 1px solid var(--граница);
+  font-size: 13px;
+  color: var(--текст2);
+}
+
+.вкладки {
+  display: flex;
+  border-bottom: 1px solid var(--граница);
+}
+.вкладки button {
+  flex: 1;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px;
+  color: var(--текст2);
+}
+.вкладки button.активна {
+  color: var(--акцент);
+  background: transparent;
+  box-shadow: inset 0 -2px 0 var(--акцент);
+  font-weight: 600;
+}
+
+.содержимое-панели {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  min-height: 0;
+}
+
+.категории {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 10px 0;
+}
+.категории button {
+  font-size: 12px;
+  padding: 5px 9px;
+}
+
+.позиция {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: var(--радиус-мал);
+  border: 1px solid transparent;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.позиция:hover {
+  background: var(--панель2);
+}
+.позиция .имя {
+  font-size: 14px;
+  line-height: 1.3;
+}
+.позиция .размер {
+  font-size: 12px;
+  color: var(--текст2);
+}
+
+.поле {
+  margin-bottom: 10px;
+}
+.поле label {
+  display: block;
+  font-size: 12px;
+  color: var(--текст2);
+  margin-bottom: 4px;
+}
+.ряд {
+  display: flex;
+  gap: 8px;
+}
+.ряд > * {
+  flex: 1;
+}
+
+.заголовок-группы {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--текст2);
+  margin: 16px 0 8px;
+}
+
+.палитра {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.цвет {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.цвет.активна {
+  border-color: var(--акцент);
+}
+
+.сообщение {
+  position: fixed;
+  left: 50%;
+  bottom: 62px;
+  transform: translateX(-50%);
+  max-width: 720px;
+  padding: 12px 18px;
+  border-radius: var(--радиус);
+  background: #262b33;
+  border: 1px solid var(--граница);
+  box-shadow: var(--тень);
+  z-index: 40;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.сообщение.ошибка {
+  border-color: var(--опасно);
+  background: #2e1d1a;
+  color: #ffd9d1;
+}
+
+.подсказка {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  background: rgba(20, 22, 26, 0.82);
+  border: 1px solid var(--граница);
+  border-radius: var(--радиус-мал);
+  padding: 10px 30px 10px 13px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--текст2);
+  pointer-events: none;
+  max-width: 310px;
+}
+.подсказка b {
+  color: var(--текст);
+}
+.подсказка .закрыть {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 7px;
+  line-height: 1.5;
+  background: transparent;
+  border: none;
+  color: var(--текст2);
+  cursor: pointer;
+  pointer-events: auto;
+  font-size: 16px;
+}
+.подсказка .закрыть:hover {
+  color: var(--акцент);
+  background: transparent;
+}
+
+.подсказка-кнопка {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 22, 26, 0.82);
+  border: 1px solid var(--граница);
+  color: var(--текст2);
+  font-weight: 600;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 0;
+}
+.подсказка-кнопка:hover {
+  color: var(--акцент);
+  border-color: var(--акцент);
+}
+
+/* Панель конструктора можно свернуть */
+.редактор.без-панели {
+  grid-template-columns: 1fr 0;
+}
+.панель {
+  overflow: hidden;
+}
+.вкладки .свернуть {
+  flex: 0 0 40px;
+  border: none;
+  background: transparent;
+  color: var(--текст2);
+  padding: 12px 0;
+}
+.вкладки .свернуть:hover {
+  color: var(--акцент);
+  background: transparent;
+}
+
+.список-проектов {
+  width: min(880px, 92vw);
+  max-height: 62vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.проект-карточка {
+  background: var(--панель);
+  border: 1px solid var(--граница);
+  border-radius: var(--радиус);
+  overflow: hidden;
+}
+.проект-карточка .превью {
+  height: 118px;
+  background: #0f1114 center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a5058;
+  font-size: 26px;
+}
+.проект-карточка .тело {
+  padding: 10px 12px;
+}
+.проект-карточка .тело .имя {
+  font-weight: 600;
+  margin-bottom: 3px;
+  word-break: break-word;
+}
+.проект-карточка .тело .мета {
+  font-size: 12px;
+  color: var(--текст2);
+  margin-bottom: 9px;
+}
+
+.форма {
+  width: min(520px, 92vw);
+  background: var(--панель);
+  border: 1px solid var(--граница);
+  border-radius: var(--радиус);
+  padding: 22px;
+}
+.форма h2 {
+  margin: 0 0 4px;
+}
+.форма .подзаголовок {
+  color: var(--текст2);
+  font-size: 14px;
+  margin-bottom: 18px;
+}
+
+.быстрые {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.загрузка {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 11, 13, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 60;
+  font-size: 15px;
+  color: var(--текст2);
+}
+
+.ошибка-вебгл {
+  padding: 40px;
+  text-align: center;
+  color: var(--текст2);
+}
