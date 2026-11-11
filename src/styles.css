@@ -480,3 +480,26 @@ select:focus {
   text-align: center;
   color: var(--текст2);
 }
+
+/* Восстановление после сбоя (старый интерфейс; в 1Б-2 заменится окном из «Верстака») */
+.восстановление {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 340px;
+  padding: 14px 16px;
+  background: var(--панель, #1d2026);
+  border: 1px solid var(--акцент, #d4a85a);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.5);
+  z-index: 50;
+  color: var(--текст, #e8e8e8);
+}
+.восстановление p {
+  margin: 6px 0 10px;
+  color: var(--текст2, #aaa);
+}
+.восстановление .кнопки {
+  display: flex;
+  gap: 8px;
+}

@@ -1,14 +1,16 @@
 {
   "name": "kuhnya3d",
-  "productName": "Кухня 3D",
+  "productName": "Верстак",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "3D-конструктор кухни: комната, каталог модулей, сборка мышкой, сохранение проектов",
+  "description": "Верстак: 3D-конструктор встроенной и корпусной мебели под размеры помещения",
   "main": "electron/main.mjs",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
     "preview": "vite preview --port 4173",
     "app": "electron .",
     "dist": "electron-builder --win --x64"
@@ -30,11 +32,12 @@
     "electron": "45.3.0",
     "electron-builder": "26.18.0",
     "typescript": "7.0.2",
-    "vite": "8.3.8"
+    "vite": "8.3.8",
+    "vitest": "5.0.5"
   },
   "build": {
     "appId": "ru.xlmnr.kuhnya3d",
-    "productName": "Кухня 3D",
+    "productName": "Верстак",
     "files": [
       "dist/**/*",
       "electron/**/*"
