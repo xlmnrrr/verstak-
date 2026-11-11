@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Верстак — стиль</title>
+<style>
+@font-face { font-family: 'Onest'; src: url('шрифты/onest-cyrillic-wght-normal.woff2') format('woff2'); font-weight: 100 900; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: 'Onest'; src: url('шрифты/onest-latin-wght-normal.woff2') format('woff2'); font-weight: 100 900; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'JetBrains Mono'; src: url('шрифты/jetbrains-mono-cyrillic-500-normal.woff2') format('woff2'); font-weight: 500; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: 'JetBrains Mono'; src: url('шрифты/jetbrains-mono-latin-500-normal.woff2') format('woff2'); font-weight: 500; unicode-range: U+0000-00FF, U+2000-206F, U+2212; }
+
+/* ───────── токены: Мастерская ───────── */
+:root, [data-theme="dark"] {
+  --фон: #1E1914; --поверх-1: #262019; --поверх-2: #2F281F; --поверх-3: #3A3126; --линия: #4A3F32;
+  --текст-1: #F3ECE1; --текст-2: #C7BBA9; --текст-3: #AC9F8C;
+  --латунь: #D9AD5F; --на-латуни: #1E1408; --синька: #86B9EA; --опасно: #F2846C; --готово: #8CC28A;
+  --лист: #2A231C; --лист-рамка: #5A4C3C;
+  --сетка: rgb(217 173 95 / .07); --сетка-5: rgb(217 173 95 / .14);
+  --стена: #3A3128; --стена-2: #443A2F; --пол: #261F19;
+  --корпус: #6E5A44; --корпус-верх: #85705A; --корпус-бок: #5A4937; --нутро: #3A3027; --зеркало: #8FA3AE;
+  --тень-1: 0 1px 2px rgb(0 0 0 / .25); --тень-2: 0 8px 24px -8px rgb(0 0 0 / .45); --тень-3: 0 24px 64px -16px rgb(0 0 0 / .55);
+  color-scheme: dark;
+}
+/* ───────── токены: Калька ───────── */
+[data-theme="light"] {
+  --фон: #E8ECEA; --поверх-1: #F5F7F6; --поверх-2: #DFE4E1; --поверх-3: #D2D9D5; --линия: #B8C1BC;
+  --текст-1: #142019; --текст-2: #36443D; --текст-3: #4C5952;
+  --латунь: #704D0E; --на-латуни: #FFFFFF; --синька: #174B8A; --опасно: #982E1A; --готово: #2A5B2C;
+  --лист: #FFFFFF; --лист-рамка: #8E9A94;
+  --сетка: rgb(23 75 138 / .07); --сетка-5: rgb(23 75 138 / .15);
+  --стена: #D5DCD8; --стена-2: #C9D1CC; --пол: #EDF0EE;
+  --корпус: #C9B497; --корпус-верх: #DCCBB2; --корпус-бок: #B39C7E; --нутро: #A8957A; --зеркало: #BFD0D8;
+  --тень-1: 0 1px 2px rgb(20 40 30 / .08); --тень-2: 0 8px 24px -8px rgb(20 40 30 / .16); --тень-3: 0 24px 64px -16px rgb(20 40 30 / .22);
+  color-scheme: light;
+}
+:root {
+  --ш-текст: 'Onest', system-ui, sans-serif; --ш-размер: 'JetBrains Mono', ui-monospace, monospace;
+  --р-поле: 6px; --р-кнопка: 10px; --р-панель: 14px; --р-модал: 20px; --р-лист: 2px;
+  --движение: 180ms cubic-bezier(.2,.7,.2,1);
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--фон); color: var(--текст-1); font: 400 15px/1.45 var(--ш-текст); -webkit-font-smoothing: antialiased; transition: background var(--движение); }
+button { font: inherit; color: inherit; }
+svg.и { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+:focus-visible { outline: 2px solid var(--латунь); outline-offset: 2px; }
+
+/* страница превью */
+.страница { max-width: 1480px; margin: 0 auto; padding: 24px 24px 64px; }
+.шапка-превью { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.шапка-превью h1 { font-size: 18px; font-weight: 680; margin: 0; }
+.шапка-превью p { margin: 0; color: var(--текст-2); font-size: 13px; }
+.темы { margin-left: auto; display: flex; gap: 4px; padding: 4px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-кнопка); }
+.темы button { border: 0; background: transparent; padding: 6px 14px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 560; color: var(--текст-2); min-height: 32px; }
+.темы button[aria-pressed="true"] { background: var(--поверх-3); color: var(--текст-1); }
+.подпись-кадра { font-size: 13px; color: var(--текст-2); margin: 32px 0 10px; }
+.кадр { position: relative; aspect-ratio: 16 / 10; min-height: 760px; border: 1px solid var(--линия); border-radius: var(--р-панель); overflow: hidden; background: var(--фон); box-shadow: var(--тень-3); }
+
+/* ───────── ОБЛОЖКА ───────── */
+.обложка { display: grid; grid-template-columns: 400px 1fr; grid-template-rows: 1fr auto; height: 100%; }
+.обложка-лево { padding: 56px 40px 24px 48px; display: flex; flex-direction: column; z-index: 1; }
+.знак { font-size: 56px; line-height: 1.05; font-weight: 680; letter-spacing: -0.025em; margin: 0; }
+.линейка { display: block; width: 260px; height: 14px; margin: 14px 0 18px; color: var(--синька); }
+.девиз { color: var(--текст-2); font-size: 15px; max-width: 30ch; margin: 0 0 40px; }
+.действия { display: flex; flex-direction: column; gap: 4px; }
+.действие { display: grid; grid-template-columns: 20px 1fr auto; align-items: center; gap: 14px; min-height: 48px; padding: 0 14px; border-radius: var(--р-кнопка); border: 1px solid transparent; background: transparent; text-align: left; cursor: pointer; transition: background var(--движение), transform var(--движение); }
+.действие:hover { background: var(--поверх-2); }
+.действие:active { transform: translateY(1px); }
+.действие b { font-weight: 560; font-size: 15px; }
+.действие.главное { background: var(--латунь); color: var(--на-латуни); box-shadow: var(--тень-1); margin-bottom: 8px; }
+.действие.главное:hover { filter: brightness(1.06); background: var(--латунь); }
+.кл { font: 500 12px/1 var(--ш-текст); color: var(--текст-3); border: 1px solid var(--линия); border-radius: 5px; padding: 4px 6px; }
+.главное .кл { color: var(--на-латуни); border-color: color-mix(in srgb, var(--на-латуни) 35%, transparent); }
+.обложка-сцена { position: relative; }
+.обложка-сцена svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.облёт { position: absolute; right: 24px; top: 20px; display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--текст-3); }
+.облёт i { width: 6px; height: 6px; border-radius: 50%; background: var(--готово); }
+.последние { grid-column: 1 / -1; background: var(--поверх-1); border-top: 1px solid var(--линия); padding: 18px 48px 22px; }
+.последние h2 { font-size: 13px; font-weight: 560; color: var(--текст-2); margin: 0 0 12px; }
+.листы { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 120px; gap: 16px; }
+.лист { position: relative; background: var(--лист); border-radius: var(--р-лист); aspect-ratio: 297 / 180; padding: 6px 6px 6px 18px; box-shadow: var(--тень-1), 0 0 0 1px color-mix(in srgb, var(--лист-рамка) 30%, transparent); cursor: pointer; transition: transform var(--движение), box-shadow var(--движение); border: 0; text-align: left; overflow: hidden; }
+.лист:hover { transform: translateY(-2px); box-shadow: var(--тень-2); }
+.лист-рамка { position: absolute; inset: 6px 6px 6px 18px; border: 1px solid var(--лист-рамка); }
+.лист svg.мини { position: absolute; left: 22px; top: 10px; width: 56%; height: calc(100% - 20px); }
+.штамп { position: absolute; right: 6px; bottom: 6px; width: 46%; background: var(--лист); border-top: 1px solid var(--лист-рамка); border-left: 1px solid var(--лист-рамка); display: grid; grid-template-columns: auto 1fr; font-size: 12px; line-height: 1.25; }
+.штамп span { padding: 3px 6px; border-bottom: 1px solid var(--лист-рамка); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.штамп span:nth-child(odd) { color: var(--текст-3); border-right: 1px solid var(--лист-рамка); }
+.штамп span:nth-last-child(-n+2) { border-bottom: 0; }
+.штамп .заг { grid-column: 1 / -1; font-weight: 600; color: var(--текст-1) !important; border-right: 0 !important; }
+.все-проекты { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 6px; border: 1px dashed var(--линия); border-radius: var(--р-лист); padding: 12px; background: transparent; cursor: pointer; color: var(--текст-2); font-size: 13px; }
+.все-проекты:hover { color: var(--текст-1); border-color: var(--текст-3); }
+
+/* ───────── РЕДАКТОР ───────── */
+.редактор { display: grid; grid-template-columns: 56px 1fr 320px; grid-template-rows: 52px 1fr 48px; height: 100%; }
+.полоса { grid-row: 1 / 3; background: var(--поверх-1); border-right: 1px solid var(--линия); display: flex; flex-direction: column; align-items: center; padding: 10px 0; gap: 4px; }
+.полоса .метка-знака { width: 32px; height: 32px; display: grid; place-items: center; font-weight: 700; font-size: 15px; color: var(--на-латуни); background: var(--латунь); border-radius: 8px; margin-bottom: 10px; }
+.кн-и { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--р-кнопка); border: 0; background: transparent; cursor: pointer; color: var(--текст-2); position: relative; transition: background var(--движение), color var(--движение); }
+.кн-и:hover { background: var(--поверх-3); color: var(--текст-1); }
+.кн-и[aria-pressed="true"] { background: var(--поверх-3); color: var(--латунь); }
+.кн-и[aria-pressed="true"]::before { content: ''; position: absolute; left: -8px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: var(--латунь); }
+.полоса .низ { margin-top: auto; }
+.верх { grid-column: 2 / 4; display: flex; align-items: center; gap: 4px; padding: 0 12px 0 16px; border-bottom: 1px solid var(--линия); background: var(--поверх-1); }
+.проект-имя { font-weight: 600; font-size: 15px; margin-right: 18px; }
+.вкладка { border: 0; background: transparent; height: 32px; padding: 0 12px; border-radius: 8px; font-size: 13px; font-weight: 560; color: var(--текст-2); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.вкладка:hover { background: var(--поверх-2); color: var(--текст-1); }
+.вкладка[aria-selected="true"] { background: var(--поверх-3); color: var(--текст-1); }
+.вкладка small { font: 500 12px var(--ш-размер); color: var(--текст-3); }
+.верх .справа { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.сохранено { font-size: 12px; color: var(--текст-3); margin-right: 10px; display: flex; align-items: center; gap: 6px; }
+.сохранено i { width: 6px; height: 6px; border-radius: 50%; background: var(--готово); }
+.кн { height: 36px; padding: 0 14px; border-radius: var(--р-кнопка); border: 1px solid var(--линия); background: var(--поверх-2); font-size: 13px; font-weight: 560; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background var(--движение), transform var(--движение); }
+.кн:hover { background: var(--поверх-3); }
+.кн:active { transform: translateY(1px); }
+.кн.латунь { background: var(--латунь); color: var(--на-латуни); border-color: transparent; }
+.кн.малая { height: 32px; width: 32px; padding: 0; justify-content: center; border-color: transparent; background: transparent; color: var(--текст-2); }
+.кн.малая:hover { background: var(--поверх-3); color: var(--текст-1); }
+.сцена { position: relative; overflow: hidden; background: var(--фон); }
+.сцена svg.чертёж { position: absolute; inset: 0; width: 100%; height: 100%; }
+.островок { position: absolute; display: flex; gap: 2px; padding: 4px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: 12px; box-shadow: var(--тень-2); transform: translate(-50%, -100%); }
+.островок .кн-и { width: 36px; height: 36px; }
+.островок .раздел { width: 1px; background: var(--линия); margin: 6px 2px; }
+.у-курсора { position: absolute; font: 500 12px/1 var(--ш-размер); color: var(--фон); background: var(--синька); padding: 5px 7px; border-radius: 5px; white-space: nowrap; }
+.мини-карта { position: absolute; left: 16px; bottom: 16px; width: 148px; height: 112px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: 10px; box-shadow: var(--тень-1); padding: 8px; }
+.мини-карта svg { width: 100%; height: 100%; }
+.свойства { grid-row: 2 / 3; grid-column: 3; background: var(--поверх-1); border-left: 1px solid var(--линия); overflow: auto; }
+.свойства-шапка { padding: 16px 16px 12px; border-bottom: 1px solid var(--линия); }
+.свойства-шапка b { display: block; font-size: 15px; font-weight: 640; }
+.свойства-шапка span { font-size: 13px; color: var(--текст-2); }
+.группа { padding: 14px 16px 16px; border-bottom: 1px solid var(--линия); }
+.группа h3 { margin: 0 0 10px; font-size: 13px; font-weight: 560; color: var(--текст-2); display: flex; justify-content: space-between; align-items: center; }
+.поля3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.поле { display: flex; flex-direction: column; gap: 4px; }
+.поле label { font-size: 12px; color: var(--текст-3); }
+.ввод { height: 32px; display: flex; align-items: center; background: var(--поверх-2); border: 1px solid transparent; border-radius: var(--р-поле); padding: 0 8px; font-variant-numeric: tabular-nums; font-size: 14px; transition: border-color var(--движение); }
+.ввод:hover { border-color: var(--линия); }
+.ввод.фокус { border-color: var(--латунь); box-shadow: 0 0 0 3px color-mix(in srgb, var(--латунь) 22%, transparent); }
+.ввод em { margin-left: auto; font-style: normal; font-size: 12px; color: var(--текст-3); }
+.сегменты { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; gap: 3px; background: var(--поверх-2); border-radius: var(--р-кнопка); }
+.сегменты button { border: 0; background: transparent; border-radius: 7px; min-height: 32px; font-size: 13px; font-weight: 560; color: var(--текст-2); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.сегменты button[aria-pressed="true"] { background: var(--поверх-1); color: var(--текст-1); box-shadow: var(--тень-1); }
+.строка { display: flex; align-items: center; justify-content: space-between; min-height: 36px; font-size: 14px; }
+.строка + .строка { border-top: 1px solid color-mix(in srgb, var(--линия) 50%, transparent); }
+.шаги { display: flex; align-items: center; gap: 2px; background: var(--поверх-2); border-radius: var(--р-поле); height: 32px; }
+.шаги button { width: 32px; height: 32px; border: 0; background: transparent; cursor: pointer; color: var(--текст-2); border-radius: var(--р-поле); }
+.шаги button:hover { background: var(--поверх-3); color: var(--текст-1); }
+.шаги b { min-width: 64px; text-align: center; font-weight: 560; font-size: 13px; font-variant-numeric: tabular-nums; }
+.тумблер { width: 36px; height: 20px; border-radius: 10px; background: var(--латунь); position: relative; border: 0; cursor: pointer; }
+.тумблер::after { content: ''; position: absolute; top: 3px; left: 19px; width: 14px; height: 14px; border-radius: 50%; background: var(--на-латуни); }
+.материалы { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.материал { border: 1px solid transparent; background: transparent; padding: 0; border-radius: 8px; cursor: pointer; text-align: left; }
+.материал i { display: block; height: 44px; border-radius: 7px 7px 0 0; }
+.материал span { display: block; font-size: 12px; padding: 5px 6px; background: var(--поверх-2); border-radius: 0 0 7px 7px; color: var(--текст-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.материал[aria-pressed="true"] { border-color: var(--латунь); }
+.материал[aria-pressed="true"] span { color: var(--текст-1); }
+.низ { grid-column: 1 / 4; display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--поверх-1); border-top: 1px solid var(--линия); }
+.инстр { display: flex; gap: 2px; }
+.инстр button { height: 34px; border: 0; background: transparent; border-radius: 8px; padding: 0 10px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 560; color: var(--текст-2); cursor: pointer; }
+.инстр button:hover { background: var(--поверх-2); color: var(--текст-1); }
+.инстр button[aria-pressed="true"] { background: var(--поверх-3); color: var(--текст-1); }
+.инстр button .кл { padding: 3px 5px; }
+.низ .справа { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+.плашка { height: 32px; display: inline-flex; align-items: center; gap: 8px; padding: 0 12px; border-radius: 8px; background: var(--поверх-2); font-size: 13px; color: var(--текст-2); border: 0; cursor: pointer; }
+.плашка b { color: var(--текст-1); font-weight: 560; font-variant-numeric: tabular-nums; }
+.плашка .ок { color: var(--готово); }
+.разд-в { width: 1px; height: 24px; background: var(--линия); margin: 0 4px; }
+
+/* ───────── образцы токенов ───────── */
+.образцы { display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 16px; margin-top: 12px; }
+.карточка-т { background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-панель); padding: 20px; }
+.карточка-т h3 { margin: 0 0 14px; font-size: 15px; font-weight: 640; }
+.цвета { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.цвет i { display: block; height: 40px; border-radius: 8px; border: 1px solid var(--линия); }
+.цвет span { display: block; font-size: 12px; color: var(--текст-2); margin-top: 4px; }
+.шкала p { margin: 0 0 6px; color: var(--текст-1); }
+.шкала small { color: var(--текст-3); font-size: 12px; margin-left: 8px; }
+.состояния { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.пусто { margin-top: 16px; border: 1px dashed var(--линия); border-radius: 10px; padding: 18px; display: flex; gap: 16px; align-items: center; }
+.пусто svg { width: 72px; height: 56px; color: var(--синька); flex: none; }
+.пусто b { display: block; font-weight: 600; }
+.пусто span { font-size: 13px; color: var(--текст-2); }
+.ошибка { margin-top: 10px; border-left: 2px solid var(--опасно); padding: 8px 12px; background: color-mix(in srgb, var(--опасно) 9%, var(--поверх-2)); border-radius: 0 8px 8px 0; font-size: 13px; }
+.ошибка b { color: var(--опасно); font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="и-новый" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/><path d="M12 11v6M9 14h6"/></symbol>
+    <symbol id="и-папка" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v1"/><path d="M3 7v11a1 1 0 0 0 1 1h14.5a1 1 0 0 0 1-.8L21.5 11a1 1 0 0 0-1-1.2H7.6a1 1 0 0 0-1 .8L4.5 19"/></symbol>
+    <symbol id="и-файл" viewBox="0 0 24 24"><path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4"/><path d="M12 10v7M9 14l3 3 3-3"/></symbol>
+    <symbol id="и-пример" viewBox="0 0 24 24"><path d="M4 20V8l8-4 8 4v12"/><path d="M4 20h16"/><path d="M8 20v-7h8v7"/><path d="M12 13v7"/></symbol>
+    <symbol id="и-каталог" viewBox="0 0 24 24"><rect x="4" y="3" width="7" height="18" rx="1"/><rect x="13" y="3" width="7" height="8" rx="1"/><rect x="13" y="13" width="7" height="8" rx="1"/><path d="M9 11v2M15 7h2M15 17h2"/></symbol>
+    <symbol id="и-помещение" viewBox="0 0 24 24"><path d="M3 4h12v6h6v10H3z"/><path d="M3 15h4M11 20v-4"/></symbol>
+    <symbol id="и-слои" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+    <symbol id="и-проверки" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="и-экспорт" viewBox="0 0 24 24"><path d="M5 3h10l4 4v5"/><path d="M5 3v18h7"/><path d="M15 3v4h4"/><path d="M16 15v6M13 18l3 3 3-3"/></symbol>
+    <symbol id="и-настройки" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></symbol>
+    <symbol id="и-справка" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6"/><path d="M12 17h.01"/></symbol>
+    <symbol id="и-двигать" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18"/><path d="m9 6 3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/></symbol>
+    <symbol id="и-растянуть" viewBox="0 0 24 24"><rect x="4" y="8" width="10" height="12" rx="1"/><path d="M14 4h6v6M20 4l-7 7"/></symbol>
+    <symbol id="и-крутить" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></symbol>
+    <symbol id="и-рулетка" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="3"/><circle cx="9" cy="12" r="2"/><path d="M15 15h6M18 15v3M21 15v3"/></symbol>
+    <symbol id="и-отменить" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+    <symbol id="и-вернуть" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></symbol>
+    <symbol id="и-открыть-дверь" viewBox="0 0 24 24"><path d="M4 21V3h9v18"/><path d="M13 5l7 3v13l-7-2"/><path d="M10 12h.01"/></symbol>
+    <symbol id="и-дублировать" viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></symbol>
+    <symbol id="и-к-соседу" viewBox="0 0 24 24"><rect x="3" y="6" width="7" height="12" rx="1"/><rect x="14" y="6" width="7" height="12" rx="1"/><path d="M12 4v16"/></symbol>
+    <symbol id="и-до-потолка" viewBox="0 0 24 24"><path d="M4 3h16"/><rect x="7" y="10" width="10" height="11" rx="1"/><path d="M12 8V5M10 6.5 12 5l2 1.5"/></symbol>
+    <symbol id="и-удалить" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+    <symbol id="и-плюс" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="и-полки-верх" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M5 9h14M5 15h14"/></symbol>
+    <symbol id="и-полки-бок" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M10 3v18M14.5 3v18"/></symbol>
+  </defs>
+</svg>
+
+<div class="страница">
+  <div class="шапка-превью">
+    <div>
+      <h1>Верстак: образец стиля</h1>
+      <p>Обложка и редактор в двух темах. В приложении вместо чертежа будет живая 3D-сцена этого же помещения.</p>
+    </div>
+    <div class="темы" role="group" aria-label="Тема">
+      <button type="button" data-тема="dark" aria-pressed="true">Мастерская</button>
+      <button type="button" data-тема="light" aria-pressed="false">Калька</button>
+    </div>
+  </div>
+
+  <p class="подпись-кадра">Обложка</p>
+  <div class="кадр">
+    <div class="обложка">
+      <div class="обложка-лево">
+        <h2 class="знак">Верстак</h2>
+        <svg class="линейка" viewBox="0 0 260 14" aria-hidden="true" id="линейка"></svg>
+        <p class="девиз">Мебель по размерам помещения: замер, сборка в 3D, чертёж для цеха.</p>
+        <div class="действия">
+          <button class="действие главное" type="button"><svg class="и"><use href="#и-новый"/></svg><b>Новый проект</b><span class="кл">N</span></button>
+          <button class="действие" type="button"><svg class="и"><use href="#и-папка"/></svg><b>Мои проекты</b><span class="кл">Ctrl+O</span></button>
+          <button class="действие" type="button"><svg class="и"><use href="#и-файл"/></svg><b>Открыть файл</b><span class="кл">Ctrl+Shift+O</span></button>
+          <button class="действие" type="button"><svg class="и"><use href="#и-пример"/></svg><b>Открыть пример</b><span></span></button>
+        </div>
+      </div>
+      <div class="обложка-сцена">
+        <svg id="сцена-обложки" aria-label="Гардеробная кв. 160: угловой шкаф 1910 на 1430, высота 2200"></svg>
+        <div class="облёт"><i></i>Кв. 160, гардеробная</div>
+      </div>
+      <div class="последние">
+        <h2>Последние проекты</h2>
+        <div class="листы" id="листы"></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="подпись-кадра">Редактор: выбран стеллаж, тянем к стене</p>
+  <div class="кадр">
+    <div class="редактор">
+      <nav class="полоса" aria-label="Инструменты">
+        <div class="метка-знака" aria-hidden="true">В</div>
+        <button class="кн-и" type="button" title="Каталог (P)" aria-pressed="false"><svg class="и"><use href="#и-каталог"/></svg></button>
+        <button class="кн-и" type="button" title="Помещения (K)" aria-pressed="true"><svg class="и"><use href="#и-помещение"/></svg></button>
+        <button class="кн-и" type="button" title="Слои (L)"><svg class="и"><use href="#и-слои"/></svg></button>
+        <button class="кн-и" type="button" title="Проверки (V)"><svg class="и"><use href="#и-проверки"/></svg></button>
+        <button class="кн-и" type="button" title="Экспорт (Ctrl+E)"><svg class="и"><use href="#и-экспорт"/></svg></button>
+        <div class="низ"></div>
+        <button class="кн-и" type="button" title="Настройки"><svg class="и"><use href="#и-настройки"/></svg></button>
+        <button class="кн-и" type="button" title="Справка (H)"><svg class="и"><use href="#и-справка"/></svg></button>
+      </nav>
+      <header class="верх">
+        <span class="проект-имя">Кв. 160</span>
+        <div role="tablist" style="display:flex;gap:2px">
+          <button class="вкладка" role="tab" aria-selected="true">Гардеробная <small>1910×1430</small></button>
+          <button class="вкладка" role="tab" aria-selected="false">Прихожая</button>
+          <button class="вкладка" role="tab" aria-selected="false">Ванная</button>
+          <button class="вкладка" role="tab" aria-selected="false" title="Добавить помещение"><svg class="и" style="width:16px;height:16px"><use href="#и-плюс"/></svg></button>
+        </div>
+        <div class="справа">
+          <span class="сохранено"><i></i>Сохранено в 14:32</span>
+          <button class="кн малая" type="button" title="Отменить (Ctrl+Z)"><svg class="и"><use href="#и-отменить"/></svg></button>
+          <button class="кн малая" type="button" title="Вернуть (Ctrl+Y)"><svg class="и"><use href="#и-вернуть"/></svg></button>
+          <button class="кн латунь" type="button"><svg class="и" style="width:18px;height:18px"><use href="#и-экспорт"/></svg>Чертёж для цеха</button>
+        </div>
+      </header>
+      <main class="сцена" id="сцена-редактора-обёртка">
+        <svg class="чертёж" id="сцена-редактора" aria-label="Сцена редактора"></svg>
+        <div class="островок" id="островок">
+          <button class="кн-и" type="button" title="Открыть (O)"><svg class="и"><use href="#и-открыть-дверь"/></svg></button>
+          <button class="кн-и" type="button" title="Дублировать (Ctrl+D)"><svg class="и"><use href="#и-дублировать"/></svg></button>
+          <button class="кн-и" type="button" title="Выровнять по соседу (A)"><svg class="и"><use href="#и-к-соседу"/></svg></button>
+          <button class="кн-и" type="button" title="До потолка (U)"><svg class="и"><use href="#и-до-потолка"/></svg></button>
+          <span class="раздел"></span>
+          <button class="кн-и" type="button" title="Удалить (Delete)"><svg class="и"><use href="#и-удалить"/></svg></button>
+        </div>
+        <div class="у-курсора" id="у-курсора">до стены 0 мм</div>
+        <div class="мини-карта" aria-label="План помещения"><svg id="мини-карта"></svg></div>
+      </main>
+      <aside class="свойства" aria-label="Свойства">
+        <div class="свойства-шапка"><b>Стеллаж с ящиками</b><span>Угловая часть, 830 × 600 × 2200</span></div>
+        <section class="группа">
+          <h3>Размеры</h3>
+          <div class="поля3">
+            <div class="поле"><label>Ширина</label><div class="ввод фокус">830<em>мм</em></div></div>
+            <div class="поле"><label>Глубина</label><div class="ввод">600<em>мм</em></div></div>
+            <div class="поле"><label>Высота</label><div class="ввод">2200<em>мм</em></div></div>
+          </div>
+        </section>
+        <section class="группа">
+          <h3>Наполнение</h3>
+          <div class="сегменты" role="group" aria-label="Направление полок" style="margin-bottom:10px">
+            <button type="button" aria-pressed="true"><svg class="и" style="width:16px;height:16px"><use href="#и-полки-верх"/></svg>Снизу вверх</button>
+            <button type="button" aria-pressed="false"><svg class="и" style="width:16px;height:16px"><use href="#и-полки-бок"/></svg>Слева направо</button>
+          </div>
+          <div class="строка"><span>Полки</span><div class="шаги"><button type="button" aria-label="Меньше">−</button><b>Авто, 3</b><button type="button" aria-label="Больше">+</button></div></div>
+          <div class="строка"><span>Ящики внизу</span><div class="шаги"><button type="button" aria-label="Меньше">−</button><b>2</b><button type="button" aria-label="Больше">+</button></div></div>
+          <div class="строка"><span>Штанга</span><button class="тумблер" type="button" role="switch" aria-checked="true" aria-label="Штанга"></button></div>
+        </section>
+        <section class="группа">
+          <h3>Фасад</h3>
+          <div class="сегменты" role="group" aria-label="Фасад">
+            <button type="button" aria-pressed="true">Открытый</button>
+            <button type="button" aria-pressed="false">Распашной</button>
+            <button type="button" aria-pressed="false">Купе</button>
+          </div>
+        </section>
+        <section class="группа">
+          <h3>Материал корпуса</h3>
+          <div class="материалы">
+            <button class="материал" type="button" aria-pressed="true"><i style="background:linear-gradient(100deg,#b9946a,#a88158 30%,#c39f74 55%,#a17a52)"></i><span>Дуб натуральный</span></button>
+            <button class="материал" type="button" aria-pressed="false"><i style="background:#ecebe6"></i><span>Белый мат</span></button>
+            <button class="материал" type="button" aria-pressed="false"><i style="background:#3d3f41"></i><span>Графит</span></button>
+            <button class="материал" type="button" aria-pressed="false"><i style="background:linear-gradient(115deg,#f2f1ee 0 38%,#cfcac2 39%,#f2f1ee 41% 70%,#d8d3cb 71%,#f2f1ee 73%)"></i><span>Calacatta</span></button>
+            <button class="материал" type="button" aria-pressed="false"><i style="background:linear-gradient(100deg,#6f4e37,#5d4030 40%,#7a5640)"></i><span>Орех</span></button>
+            <button class="материал" type="button" aria-pressed="false"><i style="background:#c5b59c"></i><span>Кашемир</span></button>
+          </div>
+        </section>
+      </aside>
+      <footer class="низ">
+        <div class="инстр" role="group" aria-label="Режим">
+          <button type="button" aria-pressed="true"><svg class="и" style="width:18px;height:18px"><use href="#и-двигать"/></svg>Двигать <span class="кл">G</span></button>
+          <button type="button" aria-pressed="false"><svg class="и" style="width:18px;height:18px"><use href="#и-растянуть"/></svg>Растянуть <span class="кл">T</span></button>
+          <button type="button" aria-pressed="false"><svg class="и" style="width:18px;height:18px"><use href="#и-крутить"/></svg>Крутить <span class="кл">R</span></button>
+          <button type="button" aria-pressed="false"><svg class="и" style="width:18px;height:18px"><use href="#и-рулетка"/></svg>Рулетка <span class="кл">M</span></button>
+        </div>
+        <div class="справа">
+          <button class="плашка" type="button"><svg class="и ок" style="width:16px;height:16px"><use href="#и-проверки"/></svg><b>Всё влезает</b></button>
+          <span class="разд-в"></span>
+          <button class="плашка" type="button">ЛДСП <b>3,2 листа</b></button>
+          <button class="плашка" type="button">Кромка <b>41 м</b></button>
+          <button class="плашка" type="button">Деталей <b>46</b></button>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <p class="подпись-кадра">Токены и состояния</p>
+  <div class="образцы">
+    <div class="карточка-т">
+      <h3>Цвет</h3>
+      <div class="цвета" id="цвета"></div>
+    </div>
+    <div class="карточка-т шкала">
+      <h3>Шрифт</h3>
+      <p style="font-size:32px;font-weight:680;letter-spacing:-.02em;line-height:1.15">Гардеробная<small>32</small></p>
+      <p style="font-size:24px;font-weight:680">Шкаф-купе<small>24</small></p>
+      <p style="font-size:18px;font-weight:600">Наполнение секции<small>18</small></p>
+      <p style="font-size:15px">Полки регулируются с шагом 32 мм.<small>15</small></p>
+      <p style="font-size:13px;color:var(--текст-2)">Подпись поля, подсказка<small>13</small></p>
+      <p style="font:500 13px var(--ш-размер);color:var(--синька)">1910 × 1430 × 2200<small style="font-family:var(--ш-текст)">размеры</small></p>
+    </div>
+    <div class="карточка-т">
+      <h3>Кнопки и состояния</h3>
+      <div class="состояния">
+        <button class="кн латунь" type="button">Сохранить</button>
+        <button class="кн" type="button">Отмена</button>
+        <button class="кн" type="button" style="outline:2px solid var(--латунь);outline-offset:2px">Фокус</button>
+        <button class="кн" type="button" disabled style="color:var(--текст-3);cursor:default">Недоступно</button>
+      </div>
+      <div class="пусто">
+        <svg viewBox="0 0 72 56" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 50h60M10 50V18l26-12 26 12v32"/><path d="M22 50V28h28v22" stroke-dasharray="3 3"/><path d="M4 8v8M4 12h12M16 8v8"/></svg>
+        <div><b>Здесь будут проекты</b><span>Начните с замера помещения: длина стен, высота, проёмы.</span></div>
+      </div>
+      <div class="ошибка"><b>Шкаф 2843 не входит.</b> До стены 2400, не хватает 443 мм. Уменьшить ширину до 2400?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* Изометрия по реальным размерам, мм. Ось X — вдоль задней стены, Z — вдоль левой, Y — вверх. */
+const К = Math.cos(Math.PI / 6), С = 0.5;
+const пр = (x, y, z) => [(x - z) * К, (x + z) * С - y];
+const пт = (м) => м.map(([x, y, z]) => пр(x, y, z).map((v) => v.toFixed(1)).join(',')).join(' ');
+const мн = (м, атр) => `<polygon points="${пт(м)}" ${атр}/>`;
+const лин = (a, b, атр) => { const [x1, y1] = пр(...a), [x2, y2] = пр(...b); return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" ${атр}/>`; };
+
+/** Короб: x0..x1, y0..y1, z0..z1 — видимые грани: верх, перед (z1), бок (x1) */
+function короб(x0, x1, y0, y1, z0, z1, цв, обводка = 'var(--линия)', ш = 1.5) {
+  const а = `stroke="${обводка}" stroke-width="${ш}" stroke-linejoin="round"`;
+  return мн([[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]], `fill="${цв.верх}" ${а}`) +
+    мн([[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]], `fill="${цв.перед}" ${а}`) +
+    мн([[x1, y0, z0], [x1, y0, z1], [x1, y1, z1], [x1, y1, z0]], `fill="${цв.бок}" ${а}`);
+}
+
+/** Размерная линия по оси: засечки 45°, подпись вдоль линии моноширинным */
+function размер(a, b, текст, сдвиг = [0, 0, 0], подсветка = false) {
+  const A = a.map((v, i) => v + сдвиг[i]), B = b.map((v, i) => v + сдвиг[i]);
+  const [x1, y1] = пр(...A), [x2, y2] = пр(...B);
+  let угол = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+  if (угол > 90) угол -= 180; if (угол < -90) угол += 180;
+  const засечка = (x, y) => `<line x1="${x - 34}" y1="${y + 34}" x2="${x + 34}" y2="${y - 34}" stroke="var(--синька)" stroke-width="2"/>`;
+  const выносы = [[a, A], [b, B]].map(([p, q]) => лин(p, q, 'stroke="var(--синька)" stroke-width="1.2" stroke-dasharray="14 10" opacity=".7"')).join('');
+  const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+  const фон = подсветка ? `<rect x="${-110}" y="${-112}" width="220" height="104" rx="14" fill="var(--синька)" transform="translate(${cx} ${cy}) rotate(${угол})"/>` : '';
+  return `<g>${выносы}<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--синька)" stroke-width="2"/>${засечка(x1, y1)}${засечка(x2, y2)}${фон}` +
+    `<text x="${cx}" y="${cy}" transform="rotate(${угол} ${cx} ${cy})" dy="-24" text-anchor="middle" font-family="JetBrains Mono, monospace" font-weight="500" font-size="96" fill="${подсветка ? 'var(--фон)' : 'var(--синька)'}">${текст}</text></g>`;
+}
+
+function помещение(W1, W2, H, opt = {}) {
+  let s = '';
+  // пол с миллиметровкой
+  s += мн([[0, 0, 0], [W1, 0, 0], [W1, 0, W2 + 400], [0, 0, W2 + 400]], 'fill="var(--пол)"');
+  if (opt.сетка !== false) {
+    for (let x = 0; x <= W1; x += 100) s += лин([x, 0, 0], [x, 0, W2 + 400], `stroke="${x % 500 ? 'var(--сетка)' : 'var(--сетка-5)'}" stroke-width="2"`);
+    for (let z = 0; z <= W2 + 400; z += 100) s += лин([0, 0, z], [W1, 0, z], `stroke="${z % 500 ? 'var(--сетка)' : 'var(--сетка-5)'}" stroke-width="2"`);
+  }
+  // стены
+  s += мн([[0, 0, 0], [W1, 0, 0], [W1, H, 0], [0, H, 0]], 'fill="var(--стена)" stroke="var(--линия)" stroke-width="2"');
+  s += мн([[0, 0, 0], [0, 0, W2], [0, H, W2], [0, H, 0]], 'fill="var(--стена-2)" stroke="var(--линия)" stroke-width="2"');
+  // торцы стен (толщина 120)
+  s += мн([[0, H, 0], [W1, H, 0], [W1, H, -120], [-120, H, -120], [-120, H, W2], [0, H, W2]], 'fill="var(--поверх-3)" stroke="var(--линия)" stroke-width="2"');
+  // розетки с замера: 340 от угла, 250 от пола
+  if (opt.розетки !== false) {
+    s += мн([[0, 220, 300], [0, 220, 380], [0, 300, 380], [0, 300, 300]], 'fill="none" stroke="var(--текст-3)" stroke-width="3"');
+    s += мн([[W1 - 380, 220, 0], [W1 - 300, 220, 0], [W1 - 300, 300, 0], [W1 - 380, 300, 0]], 'fill="none" stroke="var(--текст-3)" stroke-width="3"');
+  }
+  return s;
+}
+
+function гардеробная(выбрано) {
+  const W1 = 1910, W2 = 1430, H = 2700, Г = 600, В = 2200, ЦОК = 80;
+  const цв = { верх: 'var(--корпус-верх)', перед: 'var(--корпус)', бок: 'var(--корпус-бок)' };
+  let s = помещение(W1, W2, H);
+  // A: купе вдоль задней стены
+  s += короб(0, W1, 0, В, 0, Г, цв);
+  s += лин([Г, ЦОК, Г], [W1, ЦОК, Г], 'stroke="var(--корпус-бок)" stroke-width="3"');
+  s += лин([Г, В - 60, Г], [W1, В - 60, Г], 'stroke="var(--корпус-бок)" stroke-width="3"');
+  const д = (W1 - Г) / 2;
+  s += лин([Г + д, ЦОК, Г + 1], [Г + д, В - 60, Г + 1], 'stroke="var(--корпус-бок)" stroke-width="4"');
+  // зеркальная створка
+  s += мн([[Г + 60, ЦОК + 80, Г + 2], [Г + д - 60, ЦОК + 80, Г + 2], [Г + д - 60, В - 140, Г + 2], [Г + 60, В - 140, Г + 2]], 'fill="var(--зеркало)" opacity=".85"');
+  s += лин([Г + 120, В - 400, Г + 3], [Г + 420, В - 900, Г + 3], 'stroke="#fff" stroke-opacity=".45" stroke-width="5"');
+  s += лин([Г + 200, В - 260, Г + 3], [Г + 560, В - 860, Г + 3], 'stroke="#fff" stroke-opacity=".3" stroke-width="3"');
+  // B: открытый стеллаж вдоль левой стены, x 0..600, z 600..1430
+  const об = выбрано ? 'var(--латунь)' : 'var(--линия)', шо = выбрано ? 5 : 1.5;
+  const z0 = Г, z1 = W2, Т = 18;
+  s += мн([[0, В, z0], [Г, В, z0], [Г, В, z1], [0, В, z1]], `fill="${цв.верх}" stroke="${об}" stroke-width="${шо}"`);
+  s += мн([[Г, 0, z1], [0, 0, z1], [0, В, z1], [Г, В, z1]], `fill="${цв.бок}" stroke="${об}" stroke-width="${шо}"`);
+  // ниша стеллажа (вид спереди, грань x = 600)
+  s += мн([[Г, 0, z0], [Г, 0, z1], [Г, В, z1], [Г, В, z0]], `fill="var(--нутро)" stroke="${об}" stroke-width="${шо}"`);
+  const плита = (y) => мн([[Г, y, z0 + Т], [Г, y, z1 - Т], [Г, y + Т, z1 - Т], [Г, y + Т, z0 + Т]], `fill="${цв.перед}"`);
+  s += мн([[Г, 0, z0], [Г, 0, z0 + Т], [Г, В, z0 + Т], [Г, В, z0]], `fill="${цв.перед}"`);
+  s += мн([[Г, 0, z1 - Т], [Г, 0, z1], [Г, В, z1], [Г, В, z1 - Т]], `fill="${цв.перед}"`);
+  s += мн([[Г, 0, z0], [Г, 0, z1], [Г, ЦОК, z1], [Г, ЦОК, z0]], `fill="${цв.бок}"`);
+  // два ящика внизу
+  s += мн([[Г, ЦОК, z0 + Т], [Г, ЦОК, z1 - Т], [Г, 560, z1 - Т], [Г, 560, z0 + Т]], `fill="${цв.перед}" stroke="var(--корпус-бок)" stroke-width="3"`);
+  s += лин([Г, 320, z0 + Т], [Г, 320, z1 - Т], 'stroke="var(--корпус-бок)" stroke-width="4"');
+  s += лин([Г, 210, z0 + 330], [Г, 210, z1 - 330], 'stroke="var(--текст-2)" stroke-width="6" stroke-linecap="round"');
+  s += лин([Г, 450, z0 + 330], [Г, 450, z1 - 330], 'stroke="var(--текст-2)" stroke-width="6" stroke-linecap="round"');
+  // полки (шаг 320) и штанга
+  for (const y of [560, 1720, 2000]) s += плита(y);
+  s += лин([Г - 300, 1600, z0 + Т], [Г - 300, 1600, z1 - Т], 'stroke="var(--текст-2)" stroke-width="7" stroke-linecap="round"');
+  for (let i = 0; i < 6; i++) {
+    const z = z0 + 110 + i * 105, x = Г - 300;
+    s += лин([x, 1600, z], [x, 1540, z], 'stroke="var(--текст-3)" stroke-width="3"');
+    s += мн([[x, 1540, z - 40], [x, 1540, z + 40], [x, 1000 + (i % 3) * 90, z + 50], [x, 1000 + (i % 3) * 90, z - 50]], 'fill="var(--поверх-3)" opacity=".85"');
+  }
+  // размеры по замеру
+  s += размер([0, H, 0], [W1, H, 0], '1910', [0, 260, 0]);
+  s += размер([0, H, 0], [0, H, W2], '1430', [0, 260, 0]);
+  s += размер([W1, 0, Г], [W1, В, Г], '2200', [180, 0, 0]);
+  if (выбрано) s += размер([0, 0, z1], [Г, 0, z1], '600', [0, 0, 200], true);
+  return s;
+}
+
+function рамка(svg, вид, поля = [400, 300, 400, 300]) {
+  // вид: [xmin, ymin, xmax, ymax] в экранных единицах изометрии
+  const [x0, y0, x1, y1] = вид;
+  svg.setAttribute('viewBox', `${x0 - поля[3]} ${y0 - поля[0]} ${x1 - x0 + поля[1] + поля[3]} ${y1 - y0 + поля[0] + поля[2]}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+}
+
+const обложка = document.getElementById('сцена-обложки');
+обложка.innerHTML = гардеробная(false);
+рамка(обложка, [-1600, -3100, 1950, 1200], [200, 200, 200, 250]);
+
+const редактор = document.getElementById('сцена-редактора');
+редактор.innerHTML = гардеробная(true);
+рамка(редактор, [-1600, -3100, 1950, 1200], [300, 300, 200, 300]);
+
+/* Островок и цифра у курсора: ставим по экранным координатам точки сцены */
+function наЭкран(svg, точка) {
+  const [x, y] = пр(...точка);
+  const p = svg.createSVGPoint(); p.x = x; p.y = y;
+  const м = svg.getScreenCTM(), r = svg.parentElement.getBoundingClientRect();
+  const q = p.matrixTransform(м);
+  return [q.x - r.left, q.y - r.top];
+}
+function разместить() {
+  const [ox, oy] = наЭкран(редактор, [300, 2200, 1015]);
+  const о = document.getElementById('островок'); о.style.left = ox + 'px'; о.style.top = (oy - 24) + 'px';
+  const [cx, cy] = наЭкран(редактор, [600, 900, 1430]);
+  const к = document.getElementById('у-курсора'); к.style.left = (cx + 26) + 'px'; к.style.top = (cy + 10) + 'px';
+}
+addEventListener('resize', разместить); requestAnimationFrame(разместить);
+
+/* Мини-карта: план сверху */
+document.getElementById('мини-карта').innerHTML = `<svg viewBox="-60 -60 2030 1550"><rect x="0" y="0" width="1910" height="1430" fill="var(--пол)" stroke="var(--текст-3)" stroke-width="40"/>
+<rect x="0" y="0" width="1910" height="600" fill="var(--корпус)"/><rect x="0" y="600" width="600" height="830" fill="var(--корпус)" stroke="var(--латунь)" stroke-width="40"/>
+<path d="M1910 1100 v330" stroke="var(--фон)" stroke-width="60"/></svg>`.replace(/^<svg[^>]*>|<\/svg>$/g, '');
+document.getElementById('мини-карта').setAttribute('viewBox', '-60 -60 2030 1550');
+
+/* Линейка под названием: миллиметровые засечки */
+const лн = document.getElementById('линейка'); let rs = '<path d="M0 .75H260" stroke="currentColor" stroke-width="1.5"/>';
+for (let i = 0; i <= 52; i++) { const x = i * 5; const h = i % 10 === 0 ? 13 : i % 5 === 0 ? 9 : 5; rs += `<path d="M${x + .75} 0V${h}" stroke="currentColor" stroke-width="1.5" opacity="${i % 10 === 0 ? 1 : .6}"/>`; }
+лн.innerHTML = rs;
+
+/* Листы последних проектов: миниатюра + штамп */
+function мини(тип) {
+  const цв = { верх: 'var(--корпус-верх)', перед: 'var(--корпус)', бок: 'var(--корпус-бок)' };
+  if (тип === 'гардеробная') return помещение(1910, 1430, 2700, { сетка: false, розетки: false }) + короб(0, 1910, 0, 2200, 0, 600, цв) + короб(0, 600, 0, 2200, 600, 1430, цв);
+  if (тип === 'прихожая') return помещение(1205, 900, 2580, { сетка: false, розетки: false }) + короб(0, 1205, 0, 2580, 0, 600, цв) + лин([602, 80, 601], [602, 2500, 601], 'stroke="var(--корпус-бок)" stroke-width="10"');
+  if (тип === 'спальня') return помещение(2843, 1400, 2700, { сетка: false, розетки: false }) + короб(0, 2843, 0, 2700, 0, 600, цв) + [948, 1896].map((x) => лин([x, 80, 601], [x, 2620, 601], 'stroke="var(--корпус-бок)" stroke-width="12"')).join('');
+  return помещение(1865, 1000, 2700, { сетка: false, розетки: false }) + короб(0, 730, 0, 2650, 0, 595, цв) + короб(1100, 1865, 0, 850, 0, 590, { верх: 'var(--поверх-3)', перед: 'var(--стена-2)', бок: 'var(--стена)' });
+}
+const проекты = [
+  ['гардеробная', 'Кв. 160, гардеробная', '160-2', '11.11.2026', 'Кв. 160'],
+  ['прихожая', 'Кв. 281, прихожая', '281-4', '10.11.2026', 'Кв. 281'],
+  ['спальня', 'Кв. 281, спальня', '281-3', '10.11.2026', 'Кв. 281'],
+  ['ванная', 'Кв. 160, ванная', '160-1', '08.11.2026', 'Кв. 160'],
+];
+document.getElementById('листы').innerHTML = проекты.map(([т, имя, заказ, дата, клиент]) => `
+  <button class="лист" type="button" title="Открыть: ${имя}">
+    <span class="лист-рамка"></span>
+    <svg class="мини" viewBox="-1500 -3000 3400 4300" preserveAspectRatio="xMidYMid meet">${мини(т)}</svg>
+    <span class="штамп"><span class="заг">${имя}</span><span>Заказ</span><span>${заказ}</span><span>Дата</span><span>${дата}</span><span>Клиент</span><span>${клиент}</span></span>
+  </button>`).join('') + `<button class="все-проекты" type="button"><svg class="и"><use href="#и-папка"/></svg>Все проекты<span style="color:var(--текст-3)">12 в папке</span></button>`;
+
+/* Образцы цвета */
+const имена = [['--фон', 'Фон'], ['--поверх-1', 'Панель'], ['--поверх-2', 'Поле'], ['--поверх-3', 'Наведение'], ['--латунь', 'Латунь: действие'], ['--синька', 'Синька: размеры'], ['--опасно', 'Не влезает'], ['--готово', 'Влезает']];
+document.getElementById('цвета').innerHTML = имена.map(([v, n]) => `<div class="цвет"><i style="background:var(${v})"></i><span>${n}</span></div>`).join('');
+
+/* Переключение темы */
+document.querySelectorAll('[data-тема]').forEach((b) => b.addEventListener('click', () => {
+  document.documentElement.dataset.theme = b.dataset.тема;
+  document.querySelectorAll('[data-тема]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+}));
+const из = new URLSearchParams(location.search).get('тема');
+if (из) document.querySelector(`[data-тема="${из}"]`)?.click();
+</script>
+</body>
+</html>
