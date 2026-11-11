@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useКухня } from './store';
-import { Сцена } from './three/Scene';
+import { Холст } from './render/холст';
 import { ГлавноеМеню, ЭкранКомнаты, ЭкранПроектов } from './ui/Screens';
 import { НижняяПанель, ПраваяПанель, Шапка } from './ui/Panels';
 import { запуститьАвтосохранение } from './store/автосохранение';
@@ -47,7 +47,10 @@ export default function App() {
   useEffect(() => {
     const обработчик = (e: KeyboardEvent) => {
       const ц = e.target as HTMLElement;
-      if (ц && ['INPUT', 'TEXTAREA', 'SELECT'].includes(ц.tagName)) return;
+      // Ctrl+Z / Ctrl+Y в числовом поле панели — это отмена правки проекта, а не текста поля: поле закрепляет значение
+      const числовое = ц?.tagName === 'INPUT' && (ц as HTMLInputElement).type === 'number';
+      if (числовое && (e.ctrlKey || e.metaKey) && ['KeyZ', 'KeyY'].includes(e.code)) (ц as HTMLInputElement).blur();
+      else if (ц && ['INPUT', 'TEXTAREA', 'SELECT'].includes(ц.tagName)) return;
       const с = useКухня.getState();
       if (с.экран !== 'редактор') return;
 
@@ -189,7 +192,7 @@ export default function App() {
 /** Мягкая защита: если 3D не поднялось, показываем понятный текст, а не белый экран */
 function СценаОшибкиБезопасно({ установить }: { установить: (т: string) => void }) {
   try {
-    return <Сцена />;
+    return <Холст />;
   } catch (e) {
     установить((e as Error).message);
     return null;

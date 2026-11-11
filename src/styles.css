@@ -503,3 +503,23 @@ select:focus {
   display: flex;
   gap: 8px;
 }
+
+/* метки «не влезает» над холстом: рисует ядро рендера */
+.оверлей-меток {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.метка-влезает {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #d92f25;
+  color: #fff;
+  font: 600 12px/1 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  padding: 3px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+}

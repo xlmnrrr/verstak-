@@ -1,0 +1,458 @@
+/**
+ * Автомат жестов мыши: нет → нажато (порог 3 px) → жест → отпускание.
+ * ЛКМ: сначала стрелки (в экранных координатах), потом объекты. ПКМ и СКМ — камера (камера.ts).
+ * Нажатие без сдвига на 3 px — только выбор, без команды. Жест держит setPointerCapture.
+ * Esc во время жеста — откат к началу. Все расчёты жеста — в мм; чистая математика — в жесты-математика.ts.
+ */
+import * as THREE from 'three';
+import { изделиеПоИд } from '../model/каталог';
+import { высотаДляРендера } from '../model/помещение';
+import { ограничитьГабариты } from '../model/проект';
+import { выступЗаКонтур, следУглы } from '../model/проверка';
+import type { Габариты, Экземпляр, Вектор3 } from '../model/типы';
+import { useКухня } from '../store';
+import { изменитьОбъект } from '../store/команды';
+import type { КамераОбзора } from './камера';
+import { выбратьЦель } from './выбор';
+import {
+  пересечениеСПлоскостью,
+  позицияПоОси,
+  пределПоВысоте,
+  прилипнуть,
+  растяжение,
+  смещениеПоОси,
+  уголПоМыши,
+  type Луч,
+  type В3,
+} from './жесты-математика';
+import type { Стрелка, Стрелки } from './стрелки';
+import type { СборщикСцены } from './сборщик-сцены';
+
+export interface КонтекстЖестов {
+  el: HTMLCanvasElement;
+  camera: THREE.PerspectiveCamera;
+  сборщик: СборщикСцены;
+  стрелки: Стрелки;
+  камераОбзора: КамераОбзора;
+  попроситьКадр: () => void;
+}
+
+type Цель =
+  | { вид: 'стрелка'; стрелка: Стрелка }
+  | { вид: 'объект'; id: string }
+  | { вид: 'пусто' };
+
+interface Нажатие {
+  x0: number;
+  y0: number;
+  pid: number;
+  цель: Цель;
+  луч0: Луч;
+  clientY0: number;
+}
+
+interface ЖестОсь {
+  вид: 'ось';
+  стрелка: Стрелка;
+  старт: Экземпляр;
+  луч0: Луч;
+  x0: number;
+  y0: number;
+  clientY0: number;
+  режим: 'двигать' | 'крутить' | 'растянуть';
+  подсказкаПоказана: boolean;
+}
+
+interface ЖестПол {
+  вид: 'пол';
+  id: string;
+  старт: Экземпляр;
+  смещение: [number, number] | null;
+  yПлоскости: number;
+  последняя: [number, number];
+  стартВерный: boolean;
+}
+
+type Жест = ЖестОсь | ЖестПол;
+
+const ПОРОГ_ПИКС = 3;
+
+export class Жесты {
+  private нажатие: Нажатие | null = null;
+  private жест: Жест | null = null;
+  private выполнено = false;
+  private ждёт: PointerEvent | null = null;
+  private запланирован = 0;
+  private подключены = false;
+  private наведение = 0;
+  private _в = new THREE.Vector3();
+  private _р = new THREE.Raycaster();
+  private _н = new THREE.Vector2();
+
+  constructor(private readonly я: КонтекстЖестов) {}
+
+  /** Жест сейчас идёт (камера и подписки не мешают) */
+  get активен() {
+    return this.нажатие !== null;
+  }
+
+  /* ------------------------------------------------------------ вспомогательное */
+
+  private пикс(e: PointerEvent | MouseEvent) {
+    const r = this.я.el.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top, w: r.width, h: r.height };
+  }
+
+  /** Луч под курсором (метры) */
+  луч(x: number, y: number, w: number, h: number): Луч {
+    this.я.camera.updateMatrixWorld();
+    this._н.set((x / w) * 2 - 1, -(y / h) * 2 + 1);
+    this._р.setFromCamera(this._н, this.я.camera);
+    const { origin: о, direction: н } = this._р.ray;
+    return { о: [о.x, о.y, о.z], н: [н.x, н.y, н.z] };
+  }
+
+  /** Мировая точка → пиксели холста */
+  проекция = (p: В3): { x: number; y: number } => {
+    const r = this.я.el.getBoundingClientRect();
+    this._в.set(p[0], p[1], p[2]).project(this.я.camera);
+    return { x: ((this._в.x + 1) / 2) * r.width, y: ((1 - this._в.y) / 2) * r.height };
+  };
+
+  private найтиЦель(x: number, y: number, w: number, h: number, луч: Луч): Цель {
+    this.я.camera.updateMatrixWorld();
+    const с = this.я.стрелки.найти(x, y, this.проекция);
+    if (с) return { вид: 'стрелка', стрелка: с };
+    const { цели, ид } = this.я.сборщик.получитьЦели();
+    const р = выбратьЦель(луч, цели);
+    if (р) return { вид: 'объект', id: ид[р.индекс] };
+    return { вид: 'пусто' };
+  }
+
+  /* ------------------------------------------------------------ события */
+
+  private вниз = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    const { x, y, w, h } = this.пикс(e);
+    const луч = this.луч(x, y, w, h);
+    const цель = this.найтиЦель(x, y, w, h, луч);
+    const с = useКухня.getState();
+    if (цель.вид === 'стрелка') {
+      if (!с.выбрано.includes(цель.стрелка.id)) с.выбрать([цель.стрелка.id]);
+    } else if (цель.вид === 'объект') {
+      if (e.shiftKey) с.добавитьКлик(цель.id);
+      else с.выбрать([цель.id]);
+    }
+    this.нажатие = { x0: x, y0: y, pid: e.pointerId, цель, луч0: луч, clientY0: e.clientY };
+    this.жест = null;
+    this.выполнено = false;
+    try {
+      this.я.el.setPointerCapture(e.pointerId);
+    } catch {
+      /* захват недоступен — жест всё равно идёт по событиям окна */
+    }
+    this.я.камераОбзора.занятаЖестом = true;
+    this.я.попроситьКадр();
+  };
+
+  private двинуть = (e: PointerEvent) => {
+    if (!this.нажатие) {
+      this.подсветить(e);
+      return;
+    }
+    this.ждёт = e;
+    if (!this.запланирован) this.запланирован = requestAnimationFrame(() => this.обработать());
+  };
+
+  private обработать() {
+    this.запланирован = 0;
+    const e = this.ждёт;
+    this.ждёт = null;
+    if (e && this.нажатие) this.шаг(e);
+  }
+
+  private вверх = (e: PointerEvent) => {
+    if (!this.нажатие) return;
+    if (this.запланирован) {
+      cancelAnimationFrame(this.запланирован);
+      this.запланирован = 0;
+    }
+    const последнее = this.ждёт ?? e;
+    this.ждёт = null;
+    this.шаг(последнее);
+    const н = this.нажатие;
+    const был = this.жест;
+    this.нажатие = null;
+    this.жест = null;
+    this.я.камераОбзора.занятаЖестом = false;
+    try {
+      this.я.el.releasePointerCapture(н.pid);
+    } catch {
+      /* уже отпущен */
+    }
+    const с = useКухня.getState();
+    if (был) с.завершитьИзменение();
+    else if (н.цель.вид === 'пусто' && !e.shiftKey) с.выбрать([]);
+    this.я.el.style.cursor = '';
+    this.я.попроситьКадр();
+  };
+
+  private кнопка = (e: KeyboardEvent) => {
+    if (e.code !== 'Escape' || !this.нажатие) return;
+    // Esc во время жеста — откат к началу, объект на месте
+    e.stopImmediatePropagation();
+    const с = useКухня.getState();
+    const id = this.жест ? (this.жест.вид === 'ось' ? this.жест.стрелка.id : this.жест.id) : null;
+    if (this.жест && this.выполнено) {
+      с.отменить();
+      if (id) с.выбрать([id]);
+    }
+    this.нажатие = null;
+    this.жест = null;
+    this.выполнено = false;
+    this.я.камераОбзора.занятаЖестом = false;
+    с.завершитьИзменение();
+    this.я.el.style.cursor = '';
+    this.я.попроситьКадр();
+  };
+
+  /** Курсор над стрелкой или объектом (не чаще раза за кадр, кадр не просится) */
+  private подсветить(e: PointerEvent) {
+    if (this.наведение) return;
+    if (e.buttons !== 0) return;
+    this.наведение = requestAnimationFrame(() => {
+      this.наведение = 0;
+      const { x, y, w, h } = this.пикс(e);
+      const ц = this.найтиЦель(x, y, w, h, this.луч(x, y, w, h));
+      this.я.el.style.cursor = ц.вид === 'пусто' ? '' : 'grab';
+    });
+  }
+
+  /* ------------------------------------------------------------ шаг жеста */
+
+  private шаг(e: PointerEvent) {
+    const н = this.нажатие;
+    if (!н) return;
+    const { x, y, w, h } = this.пикс(e);
+    if (!this.жест) {
+      if (Math.hypot(x - н.x0, y - н.y0) < ПОРОГ_ПИКС) return;
+      this.начатьЖест(н, e);
+      if (!this.жест) return;
+    }
+    const ж = this.жест as Жест;
+    const луч = this.луч(x, y, w, h);
+    if (ж.вид === 'пол') this.шагПола(ж, луч);
+    else this.шагОси(ж, луч, x, y, e);
+  }
+
+  private начатьЖест(н: Нажатие, e: PointerEvent) {
+    const с = useКухня.getState();
+    const режим = с.инструмент === 'крутить' ? 'крутить' : с.инструмент === 'растянуть' ? 'растянуть' : 'двигать';
+    if (н.цель.вид === 'стрелка') {
+      const стрелка = н.цель.стрелка;
+      const экз = с.проект2.объекты.find((о) => о.id === стрелка.id);
+      if (!экз) return;
+      с.начатьИзменение();
+      this.жест = {
+        вид: 'ось',
+        стрелка,
+        старт: экз,
+        луч0: н.луч0,
+        x0: н.x0,
+        y0: н.y0,
+        clientY0: н.clientY0,
+        режим,
+        подсказкаПоказана: false,
+      };
+      this.я.el.style.cursor = 'grabbing';
+      return;
+    }
+    if (н.цель.вид === 'объект') {
+      const id = н.цель.id;
+      const экз = с.проект2.объекты.find((о) => о.id === id);
+      if (!экз) return;
+      const пом = с.проект2.помещения.find((x) => x.id === экз.помещение);
+      const стартВерный = пом ? выступЗаКонтур(пом.контур, следУглы(экз.позиция, экз.поворот, экз.габариты.ш, экз.габариты.г)) === 0 : true;
+      с.начатьИзменение();
+      this.последнийПол = null;
+      const yПлоскости = экз.позиция[1] / 1000;
+      const т = пересечениеСПлоскостью(н.луч0, [0, yПлоскости, 0], [0, 1, 0]);
+      this.жест = {
+        вид: 'пол',
+        id,
+        старт: экз,
+        смещение: т ? [экз.позиция[0] / 1000 - т[0], экз.позиция[2] / 1000 - т[2]] : null,
+        yПлоскости,
+        последняя: [экз.позиция[0], экз.позиция[2]],
+        стартВерный,
+      };
+      this.я.el.style.cursor = 'grabbing';
+    }
+    void e;
+  }
+
+  private применитьКоманду(id: string, изменение: (э: Экземпляр) => Экземпляр, название: string) {
+    useКухня.getState().выполнить(изменитьОбъект(id, изменение, название));
+    this.выполнено = true;
+  }
+
+  /** Перетаскивание по полу: плоскость на высоте низа, смещение от точки захвата, прилипание, контур помещения */
+  private шагПола(ж: ЖестПол, луч: Луч) {
+    const с = useКухня.getState();
+    const т = пересечениеСПлоскостью(луч, [0, ж.yПлоскости, 0], [0, 1, 0]);
+    if (!т) return;
+    if (!ж.смещение) ж.смещение = [ж.старт.позиция[0] / 1000 - т[0], ж.старт.позиция[2] / 1000 - т[2]];
+    let x = (т[0] + ж.смещение[0]) * 1000;
+    let z = (т[2] + ж.смещение[1]) * 1000;
+    if (с.прилипание && с.шагСетки > 0) {
+      x = прилипнуть(x, с.шагСетки);
+      z = прилипнуть(z, с.шагСетки);
+    }
+    x = Math.round(x);
+    z = Math.round(z);
+    const экз = ж.старт;
+    const пом = с.проект2.помещения.find((p) => p.id === экз.помещение);
+    if (пом) {
+      const выступ = (px: number, pz: number) =>
+        выступЗаКонтур(пом.контур, следУглы([px, экз.позиция[1], pz], экз.поворот, экз.габариты.ш, экз.габариты.г));
+      const [lx, lz] = ж.последняя;
+      let выбрано: [number, number] | null = null;
+      if (ж.стартВерный) {
+        // след внутри контура: пробуем сдвиг целиком, потом только по x, потом только по z, иначе остаёмся в последнем верном месте
+        for (const [cx, cz] of [
+          [x, z],
+          [x, lz],
+          [lx, z],
+        ] as [number, number][]) {
+          if (выступ(cx, cz) === 0) {
+            выбрано = [cx, cz];
+            break;
+          }
+        }
+        if (!выбрано) выбрано = [lx, lz];
+      } else {
+        // объект уже не влезает (шире комнаты): двигаем, пока выступ не растёт
+        const было = выступ(lx, lz);
+        for (const [cx, cz] of [
+          [x, z],
+          [x, lz],
+          [lx, z],
+        ] as [number, number][]) {
+          if (выступ(cx, cz) <= было) {
+            выбрано = [cx, cz];
+            break;
+          }
+        }
+        if (!выбрано) выбрано = [lx, lz];
+      }
+      [x, z] = выбрано;
+    }
+    ж.последняя = [x, z];
+    if (x === (this.последнийПол?.[0] ?? NaN) && z === this.последнийПол?.[1]) return;
+    this.последнийПол = [x, z];
+    this.применитьКоманду(ж.id, (э) => ({ ...э, позиция: [x, э.позиция[1], z] as Вектор3 }), 'Переместить');
+  }
+  private последнийПол: [number, number] | null = null;
+
+  /** Тяга за стрелку: двигать (мировая ось), растянуть (локальная ось), крутить (вертикаль) */
+  private шагОси(ж: ЖестОсь, луч: Луч, x: number, y: number, e: PointerEvent) {
+    const с = useКухня.getState();
+    const экз = ж.старт;
+    const изд = изделиеПоИд(экз.изделие);
+
+    if (ж.режим === 'крутить') {
+      const угол = уголПоМыши(экз.поворот, e.clientY - ж.clientY0, с.прилипание, e.shiftKey);
+      this.применитьКоманду(экз.id, (э) => ({ ...э, поворот: угол }), 'Повернуть');
+      return;
+    }
+
+    const камера = this.я.camera;
+    const p0 = this.проекция(ж.стрелка.начало);
+    const p1 = this.проекция([
+      ж.стрелка.начало[0] + ж.стрелка.направление[0] * 0.5,
+      ж.стрелка.начало[1] + ж.стрелка.направление[1] * 0.5,
+      ж.стрелка.начало[2] + ж.стрелка.направление[2] * 0.5,
+    ]);
+    const d = Math.hypot(p1.x - p0.x, p1.y - p0.y);
+    const расст = камера.position.distanceTo(new THREE.Vector3(...ж.стрелка.начало));
+    const r = this.я.el.getBoundingClientRect();
+    const mpp = (2 * расст * Math.tan((камера.fov * Math.PI) / 360)) / Math.max(1, r.height);
+    const смещение = смещениеПоОси({
+      луч0: ж.луч0,
+      луч1: луч,
+      начало: ж.стрелка.начало,
+      ось: ж.стрелка.направление,
+      камера: [камера.position.x, камера.position.y, камера.position.z],
+      экран: {
+        dx: x - ж.x0,
+        dy: y - ж.y0,
+        ux: d > 1e-3 ? (p1.x - p0.x) / d : 0,
+        uy: d > 1e-3 ? (p1.y - p0.y) / d : 0,
+        метровНаПиксель: d > 20 ? 0.5 / d : mpp,
+        вертикальная: ж.стрелка.ось === 'Y',
+      },
+    });
+    const мм = смещение * 1000;
+
+    if (ж.режим === 'растянуть') {
+      const поле: keyof Габариты = ж.стрелка.ось === 'X' ? 'ш' : ж.стрелка.ось === 'Z' ? 'г' : 'в';
+      const границы = изд?.границы;
+      const мин = границы ? границы.мин[поле] : 50;
+      const макс = границы ? границы.макс[поле] : 4000;
+      const р = растяжение(экз.габариты[поле], мм, с.шагСетки, с.прилипание, e.altKey, мин, макс);
+      if (!ж.подсказкаПоказана && р.размер !== Math.round(экз.габариты[поле] + (e.altKey ? 2 : 1) * мм) && (р.размер === мин || р.размер === макс) && изд) {
+        ж.подсказкаПоказана = true;
+        const о = ограничитьГабариты(изд, { ...экз.габариты, [поле]: р.размер + (р.размер === мин ? -1 : 1) });
+        if (о.подрезано.length) с.сообщить(`Размер ограничен: ${о.подрезано.join('; ')}`, 'ошибка');
+      }
+      const θ = (экз.поворот * Math.PI) / 180;
+      const ось: [number, number] = ж.стрелка.ось === 'X' ? [Math.cos(θ), Math.sin(θ)] : ж.стрелка.ось === 'Z' ? [-Math.sin(θ), Math.cos(θ)] : [0, 0];
+      this.применитьКоманду(
+        экз.id,
+        (э) => ({
+          ...э,
+          габариты: { ...э.габариты, [поле]: р.размер },
+          позиция: [Math.round(экз.позиция[0] + ось[0] * р.сдвиг), э.позиция[1], Math.round(экз.позиция[2] + ось[1] * р.сдвиг)] as Вектор3,
+        }),
+        'Растянуть',
+      );
+      return;
+    }
+
+    // «двигать»: меняется только своя координата, две другие остаются побитно прежними
+    const индекс = ж.стрелка.ось === 'X' ? 0 : ж.стрелка.ось === 'Y' ? 1 : 2;
+    let предел: { мин: number; макс: number } | undefined;
+    if (индекс === 1) {
+      const пом = с.проект2.помещения.find((p) => p.id === экз.помещение);
+      предел = пределПоВысоте(пом ? высотаДляРендера(пом) : 2700, экз.габариты.в);
+    }
+    const н = позицияПоОси(экз.позиция, индекс, мм, с.шагСетки, с.прилипание, предел);
+    this.применитьКоманду(экз.id, (э) => ({ ...э, позиция: н }), 'Переместить');
+  }
+
+  /* ------------------------------------------------------------ подключение */
+
+  подключить() {
+    if (this.подключены) return;
+    this.подключены = true;
+    const el = this.я.el;
+    el.addEventListener('pointerdown', this.вниз);
+    el.addEventListener('pointermove', this.двинуть);
+    el.addEventListener('pointerup', this.вверх);
+    el.addEventListener('pointercancel', this.вверх);
+    window.addEventListener('keydown', this.кнопка, true);
+  }
+
+  отключить() {
+    if (!this.подключены) return;
+    this.подключены = false;
+    const el = this.я.el;
+    el.removeEventListener('pointerdown', this.вниз);
+    el.removeEventListener('pointermove', this.двинуть);
+    el.removeEventListener('pointerup', this.вверх);
+    el.removeEventListener('pointercancel', this.вверх);
+    window.removeEventListener('keydown', this.кнопка, true);
+    if (this.запланирован) cancelAnimationFrame(this.запланирован);
+    if (this.наведение) cancelAnimationFrame(this.наведение);
+  }
+}
