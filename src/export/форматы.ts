@@ -13,6 +13,7 @@ import { деталировка, расход, спецификация, type С
 import type { ПроектV2 } from '../model/типы';
 import { примитивыЭкземпляра } from '../render/примитивы';
 import { поверхность, умолчаниеПоверхности } from '../render/материалы';
+import { htmlЛистаВидов, раскладкаЛистов, видыСпереди } from './виды';
 
 export interface ПоляШтампа {
   заказ: string;
@@ -239,42 +240,109 @@ function планSvg(п: ПроектV2, помещениеId: string): string {
 const таблицаHtml = (т: (string | number)[][]) =>
   `<table><thead><tr>${т[0].map((x) => `<th>${x}</th>`).join('')}</tr></thead><tbody>${т.slice(1).map((р) => `<tr>${р.map((x) => `<td>${typeof x === 'string' ? x.replace(/&/g, '&amp;').replace(/</g, '&lt;') : x}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
 
-/** Чертёж в стиле PROSTO: рамка и штамп на каждом листе, план с выносками, спецификация, деталировка, расход и кромка */
+/**
+ * Чертёж в стиле PROSTO: каждый лист — страница A4 альбомная фиксированного размера с рамкой и штампом внутри листа
+ * (штамп с position: fixed разрезался границей страницы). Планы и виды спереди занимают по листу; таблицы режутся на листы
+ * скриптом по измеренной высоте строк (ничего не обрезается), после чего каждому листу ставится «Лист N из M».
+ */
 export function htmlЧертежа(п: ПроектV2, штамп: ПоляШтампа, помещениеId?: string): string {
   const дата = new Date().toLocaleDateString('ru-RU');
   const пометка = пометкаПересечений(п);
   const помещения = помещениеId ? п.помещения.filter((x) => x.id === помещениеId) : п.помещения;
+  const виды = видыСпереди(п, помещениеId);
+  const раскладка = раскладкаЛистов(виды);
+  const листовПланов = помещения.length;
+  const листовВидов = раскладка?.листы.length ?? 0;
+  const экр = (т: string) => т.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const штампHtml = `<div class="штамп"><div class="назв">${экр(п.название)}</div><div class="з">Заказ №</div><div>${экр(штамп.заказ || '—')}</div><div class="з">Дата</div><div>${дата}</div><div class="з">Клиент</div><div>${экр(штамп.клиент || '—')}</div><div class="з">Дизайнер</div><div>${экр(штамп.дизайнер || '—')}</div><div class="з">Лист</div><div class="лист-н" style="grid-column: 2 / -1">Лист <span class="номер"></span> из <span class="всего"></span></div>${пометка ? `<div class="прим">${экр(пометка)}</div>` : ''}</div>`;
+  const лист = (содержимое: string, класс = '') => `<section class="лист ${класс}"><div class="рамка"></div><div class="поле">${содержимое}</div>${штампHtml}</section>`;
+
+  const составКомплекта = `Состав: ${листовПланов === 1 ? 'лист 1 — план' : `листы 1–${листовПланов} — планы`}${листовВидов ? `; ${листовВидов === 1 ? `лист ${листовПланов + 1}` : `листы ${листовПланов + 1}–${листовПланов + листовВидов}`} — виды спереди` : ''}; далее условные обозначения, спецификация, расход и кромка, деталировка. Номер листа и их общее число — в штампе каждого листа.`;
   const планы = помещения
+    .map((пом, k) => лист(`<h2>Лист ${k + 1}. План: ${экр(пом.название)} (${площадьМ2(пом.контур).toFixed(1)} м², высота стен ${typeof пом.высота === 'number' ? пом.высота : 'не задана'} мм)</h2><div class="рис">${планSvg(п, пом.id)}</div>${k === 0 ? `<p class="состав-текст">${составКомплекта}</p>` : ''}`, 'план'))
+    .join('');
+  const видыЛистов = раскладка ? раскладка.листы.map((_, i) => лист(htmlЛистаВидов(виды, раскладка, листовПланов + i + 1, i), 'виды')).join('') : '';
+  const легенды = помещения
     .map((пом) => {
       const объекты = п.объекты.filter((о) => о.помещение === пом.id && изделиеПоИд(о.изделие)?.тип !== 'проём');
-      const легенда = объекты.map((о, i) => `<tr><td>${i + 1}</td><td>${о.название ?? изделиеПоИд(о.изделие)?.название ?? о.изделие}</td><td>${о.габариты.ш} × ${о.габариты.г} × ${о.габариты.в}</td></tr>`).join('');
-      return `<section class="лист"><h2>План: ${пом.название} (${площадьМ2(пом.контур).toFixed(1)} м², высота стен ${typeof пом.высота === 'number' ? пом.высота : 'не задана'} мм)</h2><div class="план"><div class="рис">${планSvg(п, пом.id)}</div><table class="легенда"><thead><tr><th>№</th><th>Изделие</th><th>Ш × Г × В, мм</th></tr></thead><tbody>${легенда}</tbody></table></div></section>`;
+      const строки = [['№', 'Изделие', 'Ш × Г × В, мм'], ...объекты.map((о, i) => [i + 1, о.название ?? изделиеПоИд(о.изделие)?.название ?? о.изделие, `${о.габариты.ш} × ${о.габариты.г} × ${о.габариты.в}`])] as (string | number)[][];
+      return объекты.length ? `<template class="пагинация" data-заголовок="Условные обозначения: ${экр(пом.название)}">${таблицаHtml(строки)}</template>` : '';
     })
     .join('');
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${п.название}: чертёж</title><style>
-@page { size: A4 landscape; margin: 10mm 10mm 34mm 10mm; }
+  const таблицы = [
+    ['Спецификация модулей', таблицаСпецификации(п, помещениеId)],
+    ['Расход материалов и кромка', таблицаРасхода(п, помещениеId)],
+    ['Деталировка', таблицаДеталировки(п, помещениеId)],
+  ] as const;
+  const таблицыШаблоны = таблицы.map(([з, т]) => `<template class="пагинация" data-заголовок="${з}">${таблицаHtml(т)}</template>`).join('');
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><title>${экр(п.название)}: чертёж</title><style>
+@page { size: 297mm 210mm; margin: 0; }
 * { box-sizing: border-box; }
-body { font: 10pt/1.3 'Segoe UI', Arial, sans-serif; color: #142019; margin: 0; }
-.рамка { position: fixed; left: 0; top: 0; right: 0; bottom: -24mm; border: 0.6mm solid #142019; pointer-events: none; }
-.штамп { position: fixed; right: 0; bottom: -24mm; width: 130mm; border: 0.4mm solid #142019; border-right: 0; border-bottom: 0; background: #fff; font-size: 8.5pt; display: grid; grid-template-columns: 26mm 1fr 20mm 30mm; }
+html, body { margin: 0; padding: 0; }
+body { font: 10pt/1.3 'Segoe UI', Arial, sans-serif; color: #142019; }
+.лист { position: relative; width: 297mm; height: 209.5mm; overflow: hidden; page-break-after: always; break-after: page; background: #fff; }
+.лист:last-of-type { page-break-after: auto; break-after: auto; }
+.рамка { position: absolute; left: 6mm; top: 6mm; right: 6mm; bottom: 6mm; border: 0.6mm solid #142019; }
+.поле { position: absolute; left: 10mm; top: 10mm; right: 10mm; bottom: 42mm; overflow: hidden; }
+.штамп { position: absolute; right: 6mm; bottom: 6mm; width: 140mm; border: 0.4mm solid #142019; border-right: 0; border-bottom: 0; background: #fff; font-size: 8.5pt; display: grid; grid-template-columns: 26mm 1fr 20mm 30mm; border-top-left-radius: 0; }
 .штамп div { padding: 1.2mm 2mm; border-right: 0.2mm solid #142019; border-bottom: 0.2mm solid #142019; }
 .штамп .з { background: #eef1ef; font-size: 7.5pt; color: #36443d; }
 .штамп .назв { grid-column: 1 / -1; font-weight: 700; font-size: 10pt; }
 .штамп .прим { grid-column: 1 / -1; color: #982e1a; font-weight: 700; font-size: 8pt; }
-.пометка { border: 0.4mm solid #982e1a; color: #982e1a; font-weight: 700; padding: 1.5mm 3mm; margin: 0 2mm 3mm; }
-h1 { font-size: 15pt; margin: 0 0 3mm; } h2 { font-size: 11pt; margin: 0 0 3mm; }
-.лист { page-break-after: always; padding: 2mm 2mm 0; }
-.план { display: grid; grid-template-columns: 1fr 70mm; gap: 6mm; align-items: start; }
-.рис { border: 0.2mm solid #b8c1bc; height: 150mm; } table { border-collapse: collapse; width: 100%; font-size: 8.5pt; }
+.штамп .лист-н { font-weight: 700; }
+h1 { font-size: 15pt; margin: 0 0 3mm; } h2 { font-size: 11pt; margin: 0 0 2mm; }
+.рис { border: 0.2mm solid #b8c1bc; height: 136mm; } .состав-текст { font-size: 8pt; color: #36443d; margin: 1.5mm 0 0; } table { border-collapse: collapse; width: 100%; font-size: 8.5pt; }
 th, td { border: 0.2mm solid #8e9a94; padding: 0.8mm 1.6mm; text-align: left; } thead { display: table-header-group; } tr { page-break-inside: avoid; }
-th { background: #eef1ef; } .легенда { height: fit-content; }
+th { background: #eef1ef; }
+.полотно { position: relative; border: 0.2mm solid #b8c1bc; margin: 0 auto; overflow: hidden; } .вид { position: absolute; }
 </style></head><body>
-<div class="рамка"></div>
-<div class="штамп"><div class="назв">${п.название}</div><div class="з">Заказ №</div><div>${штамп.заказ || '—'}</div><div class="з">Дата</div><div>${дата}</div><div class="з">Клиент</div><div>${штамп.клиент || '—'}</div><div class="з">Дизайнер</div><div>${штамп.дизайнер || '—'}</div>${пометка ? `<div class="прим">${пометка}</div>` : ''}</div>
-${пометка ? `<div class="пометка">ПРИМЕЧАНИЕ: ${пометка}</div>` : ''}
 ${планы}
-<section class="лист"><h1>Спецификация модулей</h1>${таблицаHtml(таблицаСпецификации(п, помещениеId))}</section>
-<section class="лист"><h1>Расход материалов и кромка</h1>${таблицаHtml(таблицаРасхода(п, помещениеId))}</section>
-<section><h1>Деталировка</h1>${таблицаHtml(таблицаДеталировки(п, помещениеId))}</section>
+${видыЛистов}
+${легенды}
+${таблицыШаблоны}
+<template id="шаблон-листа"><section class="лист таблица"><div class="рамка"></div><div class="поле"><h1></h1></div>${штампHtml}</section></template>
+<script>
+(function () {
+  var шаблонЛиста = document.getElementById('шаблон-листа');
+  var шаблоны = Array.prototype.slice.call(document.querySelectorAll('template.пагинация'));
+  шаблоны.forEach(function (т) {
+    var таблица = т.content.querySelector('table');
+    var строки = Array.prototype.slice.call(таблица.tBodies[0].rows);
+    var заголовок = т.getAttribute('data-заголовок');
+    var i = 0;
+    var часть = 0;
+    do {
+      часть++;
+      var секция = шаблонЛиста.content.firstElementChild.cloneNode(true);
+      секция.querySelector('h1').textContent = заголовок + (часть > 1 ? ' (продолжение)' : '');
+      var копия = таблица.cloneNode(false);
+      копия.appendChild(таблица.tHead.cloneNode(true));
+      var тело = document.createElement('tbody');
+      копия.appendChild(тело);
+      var поле = секция.querySelector('.поле');
+      поле.appendChild(копия);
+      т.parentNode.insertBefore(секция, т);
+      var добавлено = 0;
+      while (i < строки.length) {
+        var строка = строки[i].cloneNode(true);
+        тело.appendChild(строка);
+        if (поле.scrollHeight > поле.clientHeight + 1 && добавлено > 0) {
+          тело.removeChild(строка);
+          break;
+        }
+        добавлено++;
+        i++;
+      }
+    } while (i < строки.length);
+  });
+  var листы = document.querySelectorAll('.лист');
+  Array.prototype.forEach.call(листы, function (л, k) {
+    var н = л.querySelector('.номер');
+    var в = л.querySelector('.всего');
+    if (н) н.textContent = String(k + 1);
+    if (в) в.textContent = String(листы.length);
+  });
+})();
+</script>
 </body></html>`;
 }
