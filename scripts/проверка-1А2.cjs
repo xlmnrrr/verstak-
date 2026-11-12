@@ -24,7 +24,9 @@ const проверка = (имя, ок, подробности = '') => {
 function подготовить() {
   fs.rmSync(данные, { recursive: true, force: true });
   fs.mkdirSync(path.join(данные, 'Проекты'), { recursive: true });
-  const исходный = path.join(корень, 'Проекты', 'Пример_ кухня из шаблонов.kitchen');
+  // настоящий файл в Проекты\ уже мигрирован живым прогоном: берём его v1-копию, снятую до прогона
+  const копия = path.join(корень, 'проверка', 'копия-до-прогона', 'Пример_ кухня из шаблонов.kitchen');
+  const исходный = fs.existsSync(копия) ? копия : path.join(корень, 'Проекты', 'Пример_ кухня из шаблонов.kitchen');
   fs.copyFileSync(исходный, path.join(данные, 'Проекты', 'Пример_ кухня из шаблонов.kitchen'));
 }
 
@@ -84,7 +86,7 @@ const состояниеОбъекта = (стр, id) =>
 
     /* ------------------------------------------------ запуск и пример */
     await стр.evaluate(() => {
-      const э = [...document.querySelectorAll('.карточка')].find((x) => x.textContent.includes('Пример кухни'));
+      const э = [...document.querySelectorAll('.действие')].find((x) => x.textContent.includes('Пример кухни'));
       if (э) э.click();
     });
     await пауза(3000);
@@ -254,13 +256,9 @@ const состояниеОбъекта = (стр, id) =>
     await новыйПроект(стр, 4200, 3000);
     const ид2 = await вСтранице(стр, (с) => с.getState().добавитьМодуль('тумба-ящики-600'));
     await пауза(500);
-    await стр.evaluate(() => {
-      const в = [...document.querySelectorAll('.вкладки button')].find((b) => b.textContent.includes('Объект'));
-      if (в) в.click();
-    });
-    await пауза(400);
+    await пауза(600);
     const исходное = await состояниеОбъекта(стр, ид2);
-    const поле = (await стр.$$('.содержимое-панели input[type=number]'))[0];
+    const поле = (await стр.$$('.выезд.справа input[type=number]'))[0];
     await поле.click({ clickCount: 3 });
     await стр.keyboard.type('700');
     await стр.keyboard.press('Enter');
@@ -278,7 +276,7 @@ const состояниеОбъекта = (стр, id) =>
       `ш ${исходное.габариты.ш} → ${сПоправкой.габариты.ш} → отмена ${послеОтмены.габариты.ш}`,
     );
     // Ctrl+Z прямо из поля (без Enter)
-    const поле2 = (await стр.$$('.содержимое-панели input[type=number]'))[0];
+    const поле2 = (await стр.$$('.выезд.справа input[type=number]'))[0];
     await поле2.click({ clickCount: 3 });
     await стр.keyboard.type('800');
     await стр.keyboard.press('Enter');
@@ -314,7 +312,7 @@ const состояниеОбъекта = (стр, id) =>
     const ya1 = await ядро(стр, (х) => х.ядро.камераОбзора.yaw);
     проверка('ПКМ поворачивает камеру', Math.abs(ya1 - ya0) > 0.1, `yaw ${ya0.toFixed(2)} → ${ya1.toFixed(2)}`);
     // набор имени не двигает камеру
-    const имя = await стр.$('.шапка input');
+    const имя = await стр.$('.проект-имя');
     const п0 = await ядро(стр, (х) => [х.ядро.камераОбзора.pos.x, х.ядро.камераОбзора.pos.z]);
     await имя.click();
     await стр.keyboard.type('wasdwasd');
@@ -459,7 +457,7 @@ const состояниеОбъекта = (стр, id) =>
     await пауза(2500);
     const схемаВПамяти = await вСтранице(стр, (с) => ({ экран: с.getState().экран, схема: с.getState().проект2.schemaVersion, объектов: с.getState().проект2.объекты.length }));
     await стр.evaluate(() => {
-      const б = [...document.querySelectorAll('.шапка button')].find((x) => x.textContent.trim() === 'Сохранить');
+      const б = [...document.querySelectorAll('.верх button')].find((x) => x.textContent.trim() === 'Сохранить');
       if (б) б.click();
     });
     await пауза(1500);

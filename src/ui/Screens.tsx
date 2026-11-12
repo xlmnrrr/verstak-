@@ -2,53 +2,9 @@ import { useEffect, useState } from 'react';
 import { useКухня } from '../store';
 import { пустая_комната, type Room } from '../types';
 import { ОБОИ, ПОЛЫ } from '../data/materials';
-import { собратьДемо } from '../lib/демо';
 import * as хранилище from '../lib/storage';
 import type { ЗаписьСписка } from '../lib/storage';
-
-export function ГлавноеМеню() {
-  const наЭкран = useКухня((s) => s.наЭкран);
-  const открытьФайл = useКухня((s) => s.открытьФайл);
-  const загрузитьV1 = useКухня((s) => s.загрузитьV1);
-
-  return (
-    <div className="экран-центр">
-      <div className="логотип">
-        <h1>
-          Верстак
-        </h1>
-        <p>Собери мебель в объёме: помещение, изделия, материалы — и всё в миллиметрах</p>
-      </div>
-
-      <div className="карточки">
-        <div className="карточка" onClick={() => наЭкран('комната')}>
-          <div className="значок">📐</div>
-          <h2>Проект</h2>
-          <p>Создать новый: задать длину, ширину и высоту стен — и собирать кухню с нуля.</p>
-        </div>
-        <div className="карточка" onClick={() => наЭкран('проекты')}>
-          <div className="значок">🗂️</div>
-          <h2>Проекты</h2>
-          <p>Уже сохранённые: открыть, продолжить, удалить или показать папку с файлами.</p>
-        </div>
-        <div className="карточка" onClick={() => void открытьФайл()}>
-          <div className="значок">📥</div>
-          <h2>Открыть файл</h2>
-          <p>Взять проект из файла .kitchen — в том числе присланный другим человеком или Claude.</p>
-        </div>
-        <div className="карточка" onClick={() => загрузитьV1(собратьДемо())}>
-          <div className="значок">✨</div>
-          <h2>Пример кухни</h2>
-          <p>Готовая кухня: нижний ряд, столешница, навесные шкафы, техника, стол со стульями, окно.</p>
-        </div>
-      </div>
-
-      <p style={{ color: 'var(--текст2)', fontSize: 13 }}>
-        Чертежи-образцы: 14 шаблонов модулей KB281 и KB160 уже в каталоге
-      </p>
-    </div>
-  );
-}
+import { Иконка } from './design/Иконки';
 
 export function ЭкранПроектов() {
   const наЭкран = useКухня((s) => s.наЭкран);
@@ -77,19 +33,20 @@ export function ЭкранПроектов() {
     <div className="экран-центр" style={{ justifyContent: 'flex-start', paddingTop: 34 }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'center', width: 'min(880px, 92vw)' }}>
         <h2 style={{ margin: 0, marginRight: 'auto' }}>Проекты</h2>
-        <button onClick={() => void открытьФайл()}>Открыть из файла</button>
-        <button onClick={() => void показатьПапку()}>Показать папку</button>
-        <button className="тихая" onClick={() => наЭкран('меню')}>
-          В меню
+        <button className="кн" onClick={() => void открытьФайл()}>Открыть из файла</button>
+        <button className="кн" onClick={() => void показатьПапку()}>Показать папку</button>
+        <button className="кн тихая" onClick={() => наЭкран('меню')}>
+          На обложку
         </button>
       </div>
 
-      {загрузка && <p style={{ color: 'var(--текст2)' }}>Читаю папку проектов…</p>}
+      {загрузка && <div className="полоса-загрузки" role="progressbar" aria-label="Читаю папку проектов" />}
 
       {!загрузка && список.length === 0 && (
-        <p style={{ color: 'var(--текст2)' }}>
-          Пока пусто. Нажми «Проект» в меню и собери первую кухню.
-        </p>
+        <div className="пусто">
+          <b>Здесь будут проекты</b>
+          <span>Начните с замера помещения: «Новый проект» на обложке.</span>
+        </div>
       )}
 
       <div className="список-проектов">
@@ -99,7 +56,7 @@ export function ЭкранПроектов() {
               className="превью"
               style={п.превью ? { backgroundImage: `url(${п.превью})` } : undefined}
             >
-              {!п.превью && '🏠'}
+              {!п.превью && <Иконка имя="помещение" размер={40} />}
             </div>
             <div className="тело">
               <div className="имя">{п.имя}</div>
@@ -107,11 +64,11 @@ export function ЭкранПроектов() {
                 {new Date(п.изменён).toLocaleString('ru-RU')} · модулей: {п.объектов ?? 0}
               </div>
               <div style={{ display: 'flex', gap: 6 }}>
-                <button className="главная" style={{ flex: 1, padding: '6px 10px' }} onClick={() => void открыть(п.имя)}>
+                <button className="кн главная" style={{ flex: 1 }} onClick={() => void открыть(п.имя)}>
                   Открыть
                 </button>
                 <button
-                  className="опасная"
+                  className="кн опасная"
                   onClick={async () => {
                     if (!confirm(`Удалить проект «${п.имя}»?`)) return;
                     await удалить(п.имя);
@@ -126,7 +83,7 @@ export function ЭкранПроектов() {
         ))}
       </div>
 
-      <button className="тихая" onClick={() => void обновить()}>
+      <button className="кн тихая" onClick={() => void обновить()}>
         Обновить список
       </button>
     </div>
@@ -179,7 +136,7 @@ export function ЭкранКомнаты() {
 
         <div className="быстрые">
           {ПРЕСЕТЫ.map((п) => (
-            <button key={п.название} onClick={() => установитьКомнату({ ...п.комната })}>
+            <button key={п.название} className="чип" onClick={() => установитьКомнату({ ...п.комната })}>
               {п.название}
             </button>
           ))}
@@ -237,10 +194,10 @@ export function ЭкранКомнаты() {
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-          <button className="главная" style={{ flex: 1 }} onClick={() => создать(название.trim() || 'Моя кухня', комната)}>
+          <button className="кн главная" style={{ flex: 1 }} onClick={() => создать(название.trim() || 'Моя кухня', комната)}>
             Создать и открыть
           </button>
-          <button onClick={() => наЭкран('меню')}>Назад</button>
+          <button className="кн" onClick={() => наЭкран('меню')}>Назад</button>
         </div>
       </div>
     </div>

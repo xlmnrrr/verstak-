@@ -38,7 +38,7 @@ const данные = process.argv[3];
     await пауза(2000);
     const заголовок = await стр.title();
     await стр.evaluate(() => {
-      const э = [...document.querySelectorAll('.карточка')].find((x) => x.textContent.includes('Пример кухни'));
+      const э = [...document.querySelectorAll('.действие')].find((x) => x.textContent.includes('Пример кухни'));
       if (э) э.click();
     });
     await пауза(3500);

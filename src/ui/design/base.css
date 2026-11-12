@@ -1,0 +1,307 @@
+/*
+ * Базовые элементы «Верстака»: кнопки, поля, сегменты, плашки, фокус, плотность.
+ * Состояния кнопок: обычная, наведение (--поверх-3), нажатие (сдвиг на 1 px вниз), фокус (латунное кольцо 2 px с зазором 2 px),
+ * отключена (--текст-3, без тени). Цели не меньше 32 × 32 px, главные кнопки 40 px, шрифт не меньше 13 px (подписи полей 12 px).
+ */
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+body {
+  background: var(--фон);
+  color: var(--текст-1);
+  font: 400 var(--т-15) / 1.45 var(--ш-текст);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+input,
+select,
+textarea {
+  user-select: text;
+}
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+svg.и {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+:focus-visible {
+  outline: var(--фокус);
+  outline-offset: 2px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
+}
+::selection {
+  background: color-mix(in srgb, var(--латунь) 35%, transparent);
+}
+
+/* тонкие полосы прокрутки в тоне темы */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--линия) transparent;
+}
+
+/* ───────── кнопки ───────── */
+button {
+  font: inherit;
+  color: inherit;
+}
+.кн {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--р-кнопка);
+  border: 1px solid var(--линия);
+  background: var(--поверх-2);
+  font-size: var(--т-13);
+  font-weight: 560;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--о-2);
+  transition:
+    background var(--движение),
+    transform var(--движение);
+}
+.кн:hover {
+  background: var(--поверх-3);
+}
+.кн:active {
+  transform: translateY(1px);
+}
+.кн.главная {
+  min-height: 40px;
+  background: var(--латунь);
+  color: var(--на-латуни);
+  border-color: transparent;
+  box-shadow: var(--тень-1);
+}
+.кн.главная:hover {
+  filter: brightness(1.06);
+  background: var(--латунь);
+}
+.кн.тихая {
+  background: transparent;
+  border-color: transparent;
+  color: var(--текст-2);
+}
+.кн.тихая:hover {
+  background: var(--поверх-3);
+  color: var(--текст-1);
+}
+.кн.опасная {
+  color: var(--опасно);
+}
+.кн.опасная:hover {
+  background: color-mix(in srgb, var(--опасно) 14%, var(--поверх-2));
+}
+.кн:disabled,
+.кн-и:disabled {
+  color: var(--текст-3);
+  box-shadow: none;
+  cursor: default;
+  opacity: 0.7;
+}
+.кн:disabled:hover {
+  background: var(--поверх-2);
+}
+
+/* кнопка-иконка */
+.кн-и {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--р-кнопка);
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: var(--текст-2);
+  position: relative;
+  transition:
+    background var(--движение),
+    color var(--движение);
+}
+.кн-и:hover {
+  background: var(--поверх-3);
+  color: var(--текст-1);
+}
+.кн-и:active {
+  transform: translateY(1px);
+}
+.кн-и[aria-pressed='true'] {
+  background: var(--поверх-3);
+  color: var(--латунь);
+}
+.кн-и.малая {
+  width: 32px;
+  height: 32px;
+}
+
+/* клавиша-подсказка */
+.кл {
+  font: 500 var(--т-12) / 1 var(--ш-текст);
+  color: var(--текст-3);
+  border: 1px solid var(--линия);
+  border-radius: 5px;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+/* ───────── поля ───────── */
+.поле {
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-1);
+  min-width: 0;
+}
+.поле label {
+  font-size: var(--т-12);
+  color: var(--текст-3);
+}
+.поле input,
+.поле select,
+.ввод-текст {
+  height: 32px;
+  width: 100%;
+  background: var(--поверх-2);
+  color: var(--текст-1);
+  border: 1px solid transparent;
+  border-radius: var(--р-поле);
+  padding: 0 var(--о-2);
+  font: 400 14px var(--ш-текст);
+  font-variant-numeric: tabular-nums;
+  transition:
+    border-color var(--движение),
+    box-shadow var(--движение);
+}
+.поле input:hover,
+.поле select:hover,
+.ввод-текст:hover {
+  border-color: var(--линия);
+}
+.поле input:focus,
+.поле select:focus,
+.ввод-текст:focus {
+  outline: none;
+  border-color: var(--латунь);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--латунь) 22%, transparent);
+}
+.поле input[type='number']::-webkit-inner-spin-button {
+  opacity: 0.5;
+}
+
+/* сегменты */
+.сегменты {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  gap: 3px;
+  background: var(--поверх-2);
+  border-radius: var(--р-кнопка);
+}
+.сегменты button {
+  border: 0;
+  background: transparent;
+  border-radius: 7px;
+  min-height: 32px;
+  padding: 0 var(--о-2);
+  font-size: var(--т-13);
+  font-weight: 560;
+  color: var(--текст-2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.сегменты button:hover {
+  color: var(--текст-1);
+}
+.сегменты button[aria-pressed='true'] {
+  background: var(--поверх-1);
+  color: var(--текст-1);
+  box-shadow: var(--тень-1);
+}
+
+/* плашки статуса */
+.плашка {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--о-2);
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--поверх-2);
+  font-size: var(--т-13);
+  color: var(--текст-2);
+  border: 0;
+  font-variant-numeric: tabular-nums;
+}
+.плашка b {
+  color: var(--текст-1);
+  font-weight: 560;
+}
+.плашка.ок {
+  color: var(--готово);
+}
+.плашка.ошибка {
+  color: var(--опасно);
+  background: color-mix(in srgb, var(--опасно) 12%, var(--поверх-2));
+}
+button.плашка {
+  cursor: pointer;
+}
+
+/* тонкая латунная полоса загрузки сверху (без спиннеров) */
+.полоса-загрузки {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  overflow: hidden;
+  background: transparent;
+  z-index: 5;
+}
+.полоса-загрузки::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 30%;
+  background: var(--латунь);
+  animation: бег 1.2s cubic-bezier(0.2, 0.7, 0.2, 1) infinite;
+}
+@keyframes бег {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(340%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

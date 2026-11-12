@@ -36,7 +36,7 @@ const схема = (ф) => {
     const { браузер, стр } = await подключиться(АДРЕС, 9334);
     await пауза(1500);
     await стр.evaluate(() => {
-      const к = [...document.querySelectorAll('.карточка')].find((x) => x.textContent.includes('Проекты') || x.textContent.includes('Открыть проект'));
+      const к = [...document.querySelectorAll('.действие')].find((x) => x.textContent.includes('Мои проекты'));
       if (к) к.click();
     });
     await пауза(1200);
@@ -52,7 +52,7 @@ const схема = (ф) => {
     });
     console.log('ОТКРЫТ:', JSON.stringify(состояние));
     await стр.evaluate(() => {
-      const б = [...document.querySelectorAll('.шапка button')].find((x) => x.textContent.trim() === 'Сохранить');
+      const б = [...document.querySelectorAll('.верх button')].find((x) => x.textContent.trim() === 'Сохранить');
       if (б) б.click();
     });
     await пауза(2000);

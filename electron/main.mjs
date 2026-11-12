@@ -2,12 +2,23 @@
  * «Верстак»: точка входа Electron (ESM — в Electron 45 модуль 'electron' доступен только через import).
  * Задача файла: окно приложения, портативная папка «Проекты\», атомарная запись, бэкапы, диалоги.
  */
-import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, screen } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { очиститьИмя } from './имя-файла.mjs';
 
 const DEV_URL = process.env.КУХНЯ_DEV_URL || '';
+
+// Для проверок: данные подменены — профиль окна (размер, одно-экземплярная блокировка) живёт в той же папке,
+// чтобы тестовый запуск не мешал рабочему окну и не читал его настройки.
+if (process.env.VERSTAK_DATA_DIR) app.setPath('userData', path.join(process.env.VERSTAK_DATA_DIR, '.профиль'));
+app.setAppUserModelId('ru.xlmnr.kuhnya3d');
+
+/** Повторный запуск не открывает второе окно, а поднимает уже открытое */
+const главныйЭкземпляр = app.requestSingleInstanceLock();
+if (!главныйЭкземпляр) {
+  app.quit();
+}
 const сборка = !DEV_URL;
 const здесь = import.meta.dirname; // папка electron/
 
@@ -62,20 +73,77 @@ function записатьАтомарно(путь, текст) {
   fs.renameSync(врем, путь);
 }
 
+/** Размер и положение окна запоминаются в userData\окно.json */
+function файлСостоянияОкна() {
+  return path.join(app.getPath('userData'), 'окно.json');
+}
+
+function прочитатьСостояниеОкна() {
+  try {
+    const с = JSON.parse(fs.readFileSync(файлСостоянияОкна(), 'utf8'));
+    if (!Number.isFinite(с.width) || !Number.isFinite(с.height)) return null;
+    // окно должно оказаться хотя бы частично на каком-нибудь из экранов
+    if (Number.isFinite(с.x) && Number.isFinite(с.y)) {
+      const видно = screen.getAllDisplays().some((д) => {
+        const г = д.workArea;
+        return с.x < г.x + г.width - 80 && с.x + с.width > г.x + 80 && с.y < г.y + г.height - 60 && с.y >= г.y - 20;
+      });
+      if (!видно) return { width: с.width, height: с.height, maximized: !!с.maximized };
+    }
+    return с;
+  } catch {
+    return null;
+  }
+}
+
+let окноПриложения = null;
+
 function создатьОкно() {
+  const с = прочитатьСостояниеОкна();
   const окно = new BrowserWindow({
-    width: 1440,
-    height: 900,
+    width: с?.width ?? 1440,
+    height: с?.height ?? 900,
+    ...(Number.isFinite(с?.x) && Number.isFinite(с?.y) ? { x: с.x, y: с.y } : {}),
     minWidth: 1100,
     minHeight: 700,
-    backgroundColor: '#14161a',
+    backgroundColor: '#1E1914',
     title: 'Верстак',
+    icon: path.join(здесь, 'иконка.ico'),
     autoHideMenuBar: true,
+    show: false,
     webPreferences: {
       preload: path.join(здесь, 'preload.cjs'),
       contextIsolation: true,
       nodeIntegration: false,
     },
+  });
+  окноПриложения = окно;
+  if (с?.maximized) окно.maximize();
+  окно.once('ready-to-show', () => окно.show());
+
+  let таймер = null;
+  const запомнить = () => {
+    if (окно.isDestroyed()) return;
+    const maximized = окно.isMaximized();
+    const границы = maximized ? окно.getNormalBounds() : окно.getBounds();
+    try {
+      fs.mkdirSync(app.getPath('userData'), { recursive: true });
+      fs.writeFileSync(файлСостоянияОкна(), JSON.stringify({ ...границы, maximized }));
+    } catch {
+      /* не страшно: окно просто откроется стандартного размера */
+    }
+  };
+  const отложить = () => {
+    clearTimeout(таймер);
+    таймер = setTimeout(запомнить, 400);
+  };
+  окно.on('resize', отложить);
+  окно.on('move', отложить);
+  окно.on('maximize', отложить);
+  окно.on('unmaximize', отложить);
+  окно.on('close', () => {
+    clearTimeout(таймер);
+    запомнить();
   });
 
   if (сборка) {
@@ -272,7 +340,16 @@ ipcMain.handle('авто:интервал', async () => {
 
 ipcMain.handle('пути:проекты', async () => папкаПроектов());
 
+app.on('second-instance', () => {
+  if (окноПриложения && !окноПриложения.isDestroyed()) {
+    if (окноПриложения.isMinimized()) окноПриложения.restore();
+    окноПриложения.show();
+    окноПриложения.focus();
+  }
+});
+
 app.whenReady().then(() => {
+  if (!главныйЭкземпляр) return;
   создатьОкно();
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) создатьОкно();

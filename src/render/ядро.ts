@@ -35,8 +35,10 @@ export interface ОпцииЯдра {
   camera: THREE.PerspectiveCamera;
   invalidate: () => void;
   setDpr: (dpr: number) => void;
-  /** контейнер для HTML-меток «не влезает» (над холстом) */
+  /** контейнер для HTML-меток «не влезает» и островка действий (над холстом) */
   оверлей: HTMLElement | null;
+  /** «обложка»: сцена на фоне меню — облёт камерой, без жестов, выбора и стрелок */
+  режим?: 'редактор' | 'обложка';
 }
 
 export interface КадрыСтатистика {
@@ -57,6 +59,7 @@ export class Ядро {
   readonly lod: ВыборФаски;
   readonly видеокарта: { имя: string; профиль: ИмяПрофиля; программная: boolean };
 
+  readonly режим: 'редактор' | 'обложка';
   профиль: Профиль;
   режимКачества: 'авто' | ИмяПрофиля;
   /** MSAA, с которым создан холст: меняется только пересозданием */
@@ -83,9 +86,11 @@ export class Ядро {
   private hidden = false;
   private освобождено = false;
   private _в = new THREE.Vector3();
+  private _в2 = new THREE.Vector3();
 
   constructor(private readonly о: ОпцииЯдра) {
     const { gl, scene, camera } = о;
+    this.режим = о.режим ?? 'редактор';
     this.видеокарта = профильПоВидеокарте(определитьВидеокарту());
     const настройка = useКухня.getState().проект2.настройки.качество;
     this.режимКачества = настройка;
@@ -114,17 +119,27 @@ export class Ядро {
     this.жесты = new Жесты({ el: gl.domElement, camera, сборщик: this.сборщик, стрелки: this.стрелки, камераОбзора: this.камераОбзора, попроситьКадр: () => this.попроситьКадр() });
 
     this.применитьПрофиль(this.профиль, 'старт');
-    this.камераОбзора.подключить();
-    this.жесты.подключить();
+    if (this.режим === 'редактор') {
+      this.камераОбзора.подключить();
+      this.жесты.подключить();
+    }
     this.подписаться();
     this.синхронизировать(true);
+    this.наблюдательТемы = new MutationObserver(() => {
+      this.синхронизировать(false);
+      this.попроситьКадр();
+    });
+    this.наблюдательТемы.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
     зарегистрироватьПревью(() => this.снятьПревью());
     document.addEventListener('visibilitychange', this.видимость);
     gl.domElement.addEventListener('webglcontextrestored', this.контекстВосстановлен);
     this.hidden = document.hidden;
     void this.запуститьСамопроверку();
+    this.спокойствие = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
+
+  private спокойствие = false;
 
   /* ------------------------------------------------------------ кадры */
 
@@ -153,6 +168,7 @@ export class Ядро {
     this.флагКадра = false;
     this.кадров++;
     const { camera, gl } = this.о;
+    if (this.режим === 'обложка') this.облёт(сейчас);
     this.камераОбзора.кадр(dt);
     ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(camera.position);
     camera.updateMatrixWorld();
@@ -168,6 +184,29 @@ export class Ядро {
     if (this.режимКачества === 'авто' && !this.самопроверкаИдёт) {
       const н = this.монитор.кадр(сейчас);
       if (н) this.переключитьКачество(н, 'кадры');
+    }
+  }
+
+  /** Обложка: медленный облёт камеры вокруг помещения (один постановочный момент приложения, §6 DESIGN.md) */
+  private облёт(сейчас: number) {
+    const о = this.камераОбзора.текущаяОбласть;
+    const cx = (о.x0 + о.x1) / 2;
+    const cz = (о.z0 + о.z1) / 2;
+    const размер = Math.max(о.x1 - о.x0, о.z1 - о.z0, 2);
+    const R = Math.min(размер * 0.72 + 1.3, размер / 2 + 2.8);
+    const a = this.спокойствие || this.профиль.имя === 'слабый ноутбук' ? 0.55 : (сейчас / 1000) * 0.09 + 0.55;
+    const px = cx + Math.sin(a) * R;
+    const pz = cz + Math.cos(a) * R;
+    const py = о.высота * 0.85 + размер * 0.2;
+    const dx = cx - px;
+    const dy = о.высота * 0.3 - py;
+    const dz = cz - pz;
+    this.камераОбзора.pos.set(px, py, pz);
+    this.камераОбзора.yaw = Math.atan2(-dx, -dz);
+    this.камераОбзора.pitch = Math.asin(dy / Math.hypot(dx, dy, dz));
+    if (!this.спокойствие && this.профиль.имя !== 'слабый ноутбук' && !this.hidden) {
+      if (this.профиль.имя === 'среднее') window.setTimeout(() => this.попроситьКадр(), 33);
+      else this.попроситьКадр();
     }
   }
 
@@ -230,7 +269,8 @@ export class Ядро {
       р.а = с.помещениеАктивное;
       this.применитьПроект(с.проект2, с.помещениеАктивное, было === undefined);
     }
-    if (с.проект2.настройки.фон && с.проект2.настройки.фон !== this.фонТекущий) this.установитьФон(с.проект2.настройки.фон);
+    const фонЭфф = this.эффективныйФон(с.проект2.настройки.фон);
+    if (фонЭфф !== this.фонТекущий) this.установитьФон(фонЭфф);
 
     if (изменилсяПроект || изменилсяВид) {
       р.в = с.выбрано;
@@ -283,6 +323,17 @@ export class Ядро {
   private жестБылЖивым = false;
 
   private фонТекущий = '';
+
+  /** Фон по умолчанию (#171a1f) следует за темой интерфейса; свой цвет из настроек проекта — как задан. На обложке всегда по теме. */
+  private эффективныйФон(фонПроекта: string): string {
+    const поТеме = this.режим === 'обложка' || !фонПроекта || фонПроекта.toLowerCase() === '#171a1f';
+    if (!поТеме) return фонПроекта;
+    const ц = getComputedStyle(document.documentElement).getPropertyValue('--фон').trim();
+    return ц || '#171a1f';
+  }
+
+  private наблюдательТемы: MutationObserver | null = null;
+
   private установитьФон(цвет: string) {
     const { scene } = this.о;
     this.фонТекущий = цвет;
@@ -295,7 +346,7 @@ export class Ядро {
     const с = useКухня.getState();
     const точки = [];
     const цели = [];
-    for (const id of с.выбрано) {
+    for (const id of this.режим === 'обложка' ? [] : с.выбрано) {
       const з = this.сборщик.запись(id);
       if (!з) continue;
       цели.push(з.цель);
@@ -310,7 +361,7 @@ export class Ядро {
   /* ------------------------------------------------------------ проверка «влезает» */
 
   private запланироватьПроверку() {
-    if (this.таймерПроверки) return;
+    if (this.таймерПроверки || this.режим === 'обложка') return;
     this.таймерПроверки = window.setTimeout(() => {
       this.таймерПроверки = 0;
       if (this.освобождено) return;
@@ -321,6 +372,7 @@ export class Ядро {
         const был = худшие.get(п.id);
         if (!был || п.мм > был.мм) худшие.set(п.id, п);
       }
+      useКухня.setState({ проблем: худшие.size });
       const цели = [...худшие.keys()].map((id) => this.сборщик.запись(id)?.цель).filter((x) => !!x);
       this.контурПроблем.обновить(цели as NonNullable<(typeof цели)[number]>[]);
       // HTML-метки с цифрой
@@ -349,9 +401,42 @@ export class Ядро {
     }, 120);
   }
 
+  /** Островок действий над выделенным объектом: позиция по проекции верха габарита */
+  private обновитьОстровок(r: DOMRect) {
+    const эл = this.о.оверлей?.querySelector<HTMLElement>('.островок');
+    if (!эл) return;
+    const с = useКухня.getState();
+    const з = с.выбрано.length === 1 ? this.сборщик.запись(с.выбрано[0]) : undefined;
+    if (!з || с.жест === 'идёт') {
+      эл.dataset.скрыт = '1';
+      return;
+    }
+    const ц = з.цель;
+    this._в.set(ц.позиция[0], ц.позиция[1] + ц.полу[1] * 2, ц.позиция[2]).project(this.о.camera);
+    const виден = this._в.z > -1 && this._в.z < 1;
+    // островок стоит выше верха габарита И выше кончика стрелки «вверх» (90 px от основания), чтобы не перекрывать её
+    const основание = this._в2.set(ц.позиция[0], ц.позиция[1], ц.позиция[2]).project(this.о.camera);
+    const yВерха = ((1 - this._в.y) / 2) * r.height;
+    const yКончика = ((1 - основание.y) / 2) * r.height - 90;
+    эл.dataset.скрыт = виден ? '0' : '1';
+    if (виден) {
+      const x = Math.min(r.width - 120, Math.max(120, ((this._в.x + 1) / 2) * r.width));
+      const выше = Math.min(yВерха, yКончика) - 16;
+      if (выше >= 52) {
+        эл.style.transform = `translate(${x}px, ${выше}px) translate(-50%, -100%)`;
+      } else {
+        // над объектом нет места (объект у верхнего края кадра): островок под основанием
+        const ниже = Math.min(r.height - 60, ((1 - основание.y) / 2) * r.height + 104);
+        эл.style.transform = `translate(${x}px, ${ниже}px) translate(-50%, 0)`;
+      }
+    }
+  }
+
   private обновитьМетки() {
+    const r0 = this.о.gl.domElement.getBoundingClientRect();
+    if (this.режим === 'редактор') this.обновитьОстровок(r0);
     if (!this.метки.size) return;
-    const r = this.о.gl.domElement.getBoundingClientRect();
+    const r = r0;
     for (const [id, эл] of this.метки) {
       const з = this.сборщик.запись(id);
       if (!з) continue;
@@ -458,6 +543,7 @@ export class Ядро {
   освободить() {
     this.освобождено = true;
     this.отписка?.();
+    this.наблюдательТемы?.disconnect();
     document.removeEventListener('visibilitychange', this.видимость);
     this.о.gl.domElement.removeEventListener('webglcontextrestored', this.контекстВосстановлен);
     window.clearTimeout(this.таймерПроверки);

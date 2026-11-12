@@ -1,510 +1,404 @@
-:root {
-  --фон: #14161a;
-  --панель: #1c1f25;
-  --панель2: #23272f;
-  --граница: #2e333c;
-  --текст: #e8e6e1;
-  --текст2: #9aa0ab;
-  --акцент: #f0b429;
-  --акцент-тёмный: #8a6512;
-  --опасно: #e0563f;
-  --успех: #5fb87a;
-  --радиус: 12px;
-  --радиус-мал: 8px;
-  --тень: 0 8px 30px rgba(0, 0, 0, 0.45);
-  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-}
+@import './ui/design/tokens.css';
+@import './ui/design/base.css';
 
-* {
-  box-sizing: border-box;
-}
-
-html,
-body,
-#root {
+/* ═════════ ОБЛОЖКА ═════════ */
+.обложка {
+  position: relative;
   height: 100%;
-  margin: 0;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 1fr auto;
   background: var(--фон);
-  color: var(--текст);
   overflow: hidden;
 }
-
-button {
-  font: inherit;
-  color: inherit;
-  background: var(--панель2);
-  border: 1px solid var(--граница);
-  border-radius: var(--радиус-мал);
-  padding: 7px 12px;
-  cursor: pointer;
-  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease;
+.обложка-сцена {
+  position: absolute;
+  inset: 0;
 }
-button:hover {
-  background: #2b3038;
-  border-color: #3c434e;
-}
-button:active {
-  transform: translateY(1px);
-}
-button.активна {
-  background: var(--акцент);
-  border-color: var(--акцент);
-  color: #201a09;
-  font-weight: 600;
-}
-button.главная {
-  background: var(--акцент);
-  border-color: var(--акцент);
-  color: #201a09;
-  font-weight: 600;
-  padding: 10px 18px;
-}
-button.тихая {
-  background: transparent;
-  border-color: transparent;
-  color: var(--текст2);
-}
-button.тихая:hover {
-  color: var(--текст);
-  background: #23272f;
-}
-button.опасная:hover {
-  border-color: var(--опасно);
-  color: #ffd9d1;
-}
-
-input,
-select {
-  font: inherit;
-  color: inherit;
-  background: #14171c;
-  border: 1px solid var(--граница);
-  border-radius: var(--радиус-мал);
-  padding: 8px 10px;
-  width: 100%;
-}
-input:focus,
-select:focus {
-  outline: none;
-  border-color: var(--акцент);
-}
-
-.экран-центр {
+.обложка-сцена > div {
   height: 100%;
+}
+.обложка-лево {
+  position: relative;
+  z-index: 2;
+  grid-row: 1;
+  grid-column: 1;
+  padding: 48px 32px 24px 40px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 28px;
-  padding: 40px;
+  background: var(--поверх-1);
+  border-right: 1px solid var(--линия);
 }
-
-.логотип {
-  text-align: center;
-}
-.логотип h1 {
-  margin: 0;
-  font-size: 46px;
-  letter-spacing: -0.5px;
-}
-.логотип h1 span {
-  color: var(--акцент);
-}
-.логотип p {
-  margin: 10px 0 0;
-  color: var(--текст2);
-  font-size: 16px;
-}
-
-.карточки {
+.обложка-слово {
   display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  justify-content: center;
+  align-items: center;
+  gap: var(--о-3);
 }
-.карточка {
-  width: 290px;
-  padding: 26px;
-  border-radius: var(--радиус);
-  background: linear-gradient(160deg, #23272f, #1a1d23);
-  border: 1px solid var(--граница);
+.знак-слово {
+  font-size: var(--т-56);
+  line-height: 1.05;
+  font-weight: 680;
+  letter-spacing: -0.025em;
+}
+.линейка {
+  display: block;
+  width: 260px;
+  height: 14px;
+  margin: 14px 0 18px;
+  color: var(--синька);
+}
+.девиз {
+  color: var(--текст-2);
+  font-size: var(--т-15);
+  max-width: 30ch;
+  margin-bottom: 40px;
+}
+.действия {
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-1);
+}
+.действие {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: var(--р-кнопка);
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background var(--движение);
 }
-.карточка:hover {
-  transform: translateY(-3px);
-  border-color: var(--акцент);
-  box-shadow: var(--тень);
+.действие:hover {
+  background: var(--поверх-2);
 }
-.карточка h2 {
-  margin: 0 0 8px;
-  font-size: 22px;
+.действие:active {
+  transform: translateY(1px);
 }
-.карточка p {
-  margin: 0;
-  color: var(--текст2);
-  font-size: 14px;
-  line-height: 1.5;
+.действие b {
+  font-weight: 560;
+  font-size: var(--т-15);
 }
-.карточка .значок {
-  font-size: 30px;
+.действие.главное {
+  background: var(--латунь);
+  color: var(--на-латуни);
+  box-shadow: var(--тень-1);
+  margin-bottom: var(--о-2);
+}
+.действие.главное:hover {
+  filter: brightness(1.06);
+  background: var(--латунь);
+}
+.действие.главное .кл {
+  color: var(--на-латуни);
+  border-color: color-mix(in srgb, var(--на-латуни) 35%, transparent);
+}
+.обложка-низ-лево {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-3);
+}
+.обложка-низ-лево small {
+  font-size: var(--т-12);
+  color: var(--текст-3);
+}
+.обложка-подпись {
+  position: absolute;
+  z-index: 2;
+  right: 24px;
+  top: 20px;
+  display: flex;
+  gap: var(--о-2);
+  align-items: center;
+  font-size: var(--т-13);
+  color: var(--текст-2);
+  background: color-mix(in srgb, var(--поверх-1) 85%, transparent);
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+.обложка-подпись i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--готово);
+}
+.последние {
+  position: relative;
+  z-index: 2;
+  grid-column: 1 / -1;
+  grid-row: 2;
+  background: var(--поверх-1);
+  border-top: 1px solid var(--линия);
+  padding: 18px 40px 22px;
+  min-height: 188px;
+}
+.последние h2 {
+  font-size: var(--т-13);
+  font-weight: 560;
+  color: var(--текст-2);
   margin-bottom: 12px;
 }
+.листы {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) 140px;
+  gap: var(--о-4);
+}
+.лист {
+  position: relative;
+  background: var(--лист);
+  border-radius: var(--р-лист);
+  aspect-ratio: 297 / 180;
+  border: 0;
+  padding: 0;
+  text-align: left;
+  box-shadow:
+    var(--тень-1),
+    0 0 0 1px color-mix(in srgb, var(--лист-рамка) 30%, transparent);
+  cursor: pointer;
+  transition:
+    transform var(--движение),
+    box-shadow var(--движение);
+  color: var(--текст-1);
+}
+.лист:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--тень-2);
+}
+.лист-рамка {
+  position: absolute;
+  inset: 6px 6px 6px 18px;
+  border: 1px solid var(--лист-рамка);
+}
+.лист-картинка {
+  position: absolute;
+  left: 22px;
+  top: 10px;
+  width: 52%;
+  height: calc(100% - 20px);
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+  color: var(--синька);
+}
+.штамп {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  width: 44%;
+  background: var(--лист);
+  border-top: 1px solid var(--лист-рамка);
+  border-left: 1px solid var(--лист-рамка);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  font-size: var(--т-12);
+  line-height: 1.2;
+}
+.штамп span {
+  padding: 3px 6px;
+  border-bottom: 1px solid var(--лист-рамка);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.штамп span:nth-child(odd) {
+  color: var(--текст-3);
+  border-right: 1px solid var(--лист-рамка);
+}
+.штамп span:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+.штамп .заг {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  color: var(--текст-1);
+  border-right: 0;
+}
+.все-проекты {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6px;
+  border: 1px dashed var(--линия);
+  border-radius: var(--р-лист);
+  padding: 12px;
+  background: transparent;
+  cursor: pointer;
+  color: var(--текст-2);
+  font-size: var(--т-13);
+}
+.все-проекты:hover {
+  color: var(--текст-1);
+  border-color: var(--текст-3);
+}
+.пусто {
+  border: 1px dashed var(--линия);
+  border-radius: 10px;
+  padding: 18px;
+  display: flex;
+  gap: var(--о-4);
+  align-items: center;
+}
+.пусто svg {
+  width: 72px;
+  height: 56px;
+  color: var(--синька);
+  flex: none;
+}
+.пусто b {
+  display: block;
+  font-weight: 600;
+}
+.пусто span {
+  font-size: var(--т-13);
+  color: var(--текст-2);
+}
+.пусто .кн {
+  margin-left: auto;
+}
+.блок-ошибка {
+  border-left: 2px solid var(--опасно);
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--опасно) 9%, var(--поверх-2));
+  border-radius: 0 8px 8px 0;
+  font-size: var(--т-13);
+  display: flex;
+  align-items: center;
+  gap: var(--о-4);
+}
+.блок-ошибка b {
+  color: var(--опасно);
+  font-weight: 600;
+}
+.блок-ошибка .кн {
+  margin-left: auto;
+}
 
-/* ---------------- редактор ---------------- */
-
+/* ═════════ РЕДАКТОР ═════════ */
 .редактор {
   height: 100%;
   display: grid;
-  grid-template-columns: 1fr 348px;
-  grid-template-rows: 52px 1fr 46px;
-  grid-template-areas:
-    'шапка шапка'
-    'сцена панель'
-    'низ низ';
+  grid-template-columns: var(--полоса) 1fr;
+  grid-template-rows: var(--верх-в) 1fr var(--низ-в);
+  background: var(--фон);
 }
-.шапка {
-  grid-area: шапка;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 14px;
-  background: var(--панель);
-  border-bottom: 1px solid var(--граница);
-}
-.шапка .название {
-  font-weight: 600;
-  margin-right: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.сцена {
-  grid-area: сцена;
-  position: relative;
-  background: #171a1f;
-}
-.панель {
-  grid-area: панель;
-  background: var(--панель);
-  border-left: 1px solid var(--граница);
+.полоса {
+  grid-row: 1 / 3;
+  grid-column: 1;
+  background: var(--поверх-1);
+  border-right: 1px solid var(--линия);
   display: flex;
   flex-direction: column;
-  min-height: 0;
-}
-.низ {
-  grid-area: низ;
-  display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 14px;
-  background: var(--панель);
-  border-top: 1px solid var(--граница);
-  font-size: 13px;
-  color: var(--текст2);
+  padding: 8px 0;
+  gap: var(--о-1);
+  z-index: 6;
 }
-
-.вкладки {
-  display: flex;
-  border-bottom: 1px solid var(--граница);
-}
-.вкладки button {
-  flex: 1;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  padding: 12px;
-  color: var(--текст2);
-}
-.вкладки button.активна {
-  color: var(--акцент);
-  background: transparent;
-  box-shadow: inset 0 -2px 0 var(--акцент);
-  font-weight: 600;
-}
-
-.содержимое-панели {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  min-height: 0;
-}
-
-.категории {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 10px 0;
-}
-.категории button {
-  font-size: 12px;
-  padding: 5px 9px;
-}
-
-.позиция {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 9px 10px;
-  border-radius: var(--радиус-мал);
-  border: 1px solid transparent;
-  cursor: pointer;
-  margin-bottom: 4px;
-}
-.позиция:hover {
-  background: var(--панель2);
-}
-.позиция .имя {
-  font-size: 14px;
-  line-height: 1.3;
-}
-.позиция .размер {
-  font-size: 12px;
-  color: var(--текст2);
-}
-
-.поле {
-  margin-bottom: 10px;
-}
-.поле label {
-  display: block;
-  font-size: 12px;
-  color: var(--текст2);
-  margin-bottom: 4px;
-}
-.ряд {
-  display: flex;
-  gap: 8px;
-}
-.ряд > * {
-  flex: 1;
-}
-
-.заголовок-группы {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--текст2);
-  margin: 16px 0 8px;
-}
-
-.палитра {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px;
-}
-.цвет {
-  width: 28px;
-  height: 28px;
-  border-radius: 7px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  padding: 0;
-}
-.цвет.активна {
-  border-color: var(--акцент);
-}
-
-.сообщение {
-  position: fixed;
-  left: 50%;
-  bottom: 62px;
-  transform: translateX(-50%);
-  max-width: 720px;
-  padding: 12px 18px;
-  border-radius: var(--радиус);
-  background: #262b33;
-  border: 1px solid var(--граница);
-  box-shadow: var(--тень);
-  z-index: 40;
-  font-size: 14px;
-  line-height: 1.45;
-}
-.сообщение.ошибка {
-  border-color: var(--опасно);
-  background: #2e1d1a;
-  color: #ffd9d1;
-}
-
-.подсказка {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  background: rgba(20, 22, 26, 0.82);
-  border: 1px solid var(--граница);
-  border-radius: var(--радиус-мал);
-  padding: 10px 30px 10px 13px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: var(--текст2);
-  pointer-events: none;
-  max-width: 310px;
-}
-.подсказка b {
-  color: var(--текст);
-}
-.подсказка .закрыть {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  padding: 0 7px;
-  line-height: 1.5;
-  background: transparent;
-  border: none;
-  color: var(--текст2);
-  cursor: pointer;
-  pointer-events: auto;
-  font-size: 16px;
-}
-.подсказка .закрыть:hover {
-  color: var(--акцент);
-  background: transparent;
-}
-
-.подсказка-кнопка {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(20, 22, 26, 0.82);
-  border: 1px solid var(--граница);
-  color: var(--текст2);
-  font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
-  padding: 0;
-}
-.подсказка-кнопка:hover {
-  color: var(--акцент);
-  border-color: var(--акцент);
-}
-
-/* Панель конструктора можно свернуть */
-.редактор.без-панели {
-  grid-template-columns: 1fr 0;
-}
-.панель {
-  overflow: hidden;
-}
-.вкладки .свернуть {
-  flex: 0 0 40px;
-  border: none;
-  background: transparent;
-  color: var(--текст2);
-  padding: 12px 0;
-}
-.вкладки .свернуть:hover {
-  color: var(--акцент);
-  background: transparent;
-}
-
-.список-проектов {
-  width: min(880px, 92vw);
-  max-height: 62vh;
-  overflow-y: auto;
+.полоса .лого-кнопка {
+  width: 40px;
+  height: 40px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-  gap: 14px;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  border-radius: var(--р-кнопка);
+  cursor: pointer;
+  margin-bottom: var(--о-2);
 }
-.проект-карточка {
-  background: var(--панель);
-  border: 1px solid var(--граница);
-  border-radius: var(--радиус);
+.полоса .лого-кнопка:hover {
+  background: var(--поверх-3);
+}
+.полоса .кн-и[aria-pressed='true']::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--латунь);
+}
+.полоса .разделитель {
+  width: 28px;
+  height: 1px;
+  background: var(--линия);
+  margin: var(--о-2) 0;
+}
+.полоса .низ-полосы {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-1);
+}
+.верх {
+  grid-row: 1;
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--о-1);
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--линия);
+  background: var(--поверх-1);
+  z-index: 4;
+}
+.верх input.проект-имя {
+  width: 280px;
+  height: 36px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--р-поле);
+  color: var(--текст-1);
+  font: 640 var(--т-15) var(--ш-текст);
+  padding: 0 var(--о-2);
+  margin-right: var(--о-3);
+}
+.верх input.проект-имя:hover {
+  border-color: var(--линия);
+}
+.верх input.проект-имя:focus {
+  outline: none;
+  border-color: var(--латунь);
+  background: var(--поверх-2);
+}
+.верх .справа {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.сохранено {
+  font-size: var(--т-13);
+  color: var(--текст-2);
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.сохранено i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--готово);
+}
+.сохранено.правки i {
+  background: var(--латунь);
+}
+.сцена {
+  grid-row: 2;
+  grid-column: 2;
+  position: relative;
   overflow: hidden;
+  background: var(--фон);
 }
-.проект-карточка .превью {
-  height: 118px;
-  background: #0f1114 center/cover no-repeat;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #4a5058;
-  font-size: 26px;
-}
-.проект-карточка .тело {
-  padding: 10px 12px;
-}
-.проект-карточка .тело .имя {
-  font-weight: 600;
-  margin-bottom: 3px;
-  word-break: break-word;
-}
-.проект-карточка .тело .мета {
-  font-size: 12px;
-  color: var(--текст2);
-  margin-bottom: 9px;
-}
-
-.форма {
-  width: min(520px, 92vw);
-  background: var(--панель);
-  border: 1px solid var(--граница);
-  border-radius: var(--радиус);
-  padding: 22px;
-}
-.форма h2 {
-  margin: 0 0 4px;
-}
-.форма .подзаголовок {
-  color: var(--текст2);
-  font-size: 14px;
-  margin-bottom: 18px;
-}
-
-.быстрые {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 16px;
-}
-
-.загрузка {
-  position: fixed;
+.сцена > div:first-child {
+  position: absolute;
   inset: 0;
-  background: rgba(10, 11, 13, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 60;
-  font-size: 15px;
-  color: var(--текст2);
 }
-
-.ошибка-вебгл {
-  padding: 40px;
-  text-align: center;
-  color: var(--текст2);
-}
-
-/* Восстановление после сбоя (старый интерфейс; в 1Б-2 заменится окном из «Верстака») */
-.восстановление {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  width: 340px;
-  padding: 14px 16px;
-  background: var(--панель, #1d2026);
-  border: 1px solid var(--акцент, #d4a85a);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.5);
-  z-index: 50;
-  color: var(--текст, #e8e8e8);
-}
-.восстановление p {
-  margin: 6px 0 10px;
-  color: var(--текст2, #aaa);
-}
-.восстановление .кнопки {
-  display: flex;
-  gap: 8px;
-}
-
-/* метки «не влезает» над холстом: рисует ядро рендера */
 .оверлей-меток {
   position: absolute;
   inset: 0;
@@ -515,11 +409,475 @@ select:focus {
   position: absolute;
   left: 0;
   top: 0;
-  background: #d92f25;
-  color: #fff;
-  font: 600 12px/1 'JetBrains Mono', ui-monospace, Consolas, monospace;
-  padding: 3px 7px;
-  border-radius: 4px;
+  background: var(--опасно);
+  color: var(--фон);
+  font: 500 var(--т-12) / 1 var(--ш-размер);
+  padding: 5px 8px;
+  border-radius: 5px;
   white-space: nowrap;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--тень-1);
+}
+
+/* островок действий над выделенным */
+.островок {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--поверх-1);
+  border: 1px solid var(--линия);
+  border-radius: 12px;
+  box-shadow: var(--тень-2);
+  pointer-events: auto;
+  transition: opacity var(--движение);
+}
+.островок[data-скрыт='1'] {
+  opacity: 0;
+  pointer-events: none;
+}
+.островок .кн-и {
+  width: 36px;
+  height: 36px;
+}
+.островок .раздел {
+  width: 1px;
+  background: var(--линия);
+  margin: 6px 2px;
+}
+
+/* выезжающие панели: поверх сцены, холст не меняет размер */
+.выезд {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: var(--панель-ш);
+  background: var(--поверх-1);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform var(--движение),
+    opacity var(--движение);
+}
+.выезд.слева {
+  left: 0;
+  border-right: 1px solid var(--линия);
+  box-shadow: var(--тень-2);
+  transform: translateX(-100%);
+}
+.выезд.справа {
+  right: 0;
+  border-left: 1px solid var(--линия);
+  box-shadow: var(--тень-2);
+  transform: translateX(100%);
+}
+.выезд.открыта {
+  transform: translateX(0);
+}
+.выезд:not(.открыта) {
+  pointer-events: none;
+  visibility: hidden;
+  transition:
+    transform var(--движение),
+    visibility 0s linear 180ms;
+}
+.выезд-шапка {
+  display: flex;
+  align-items: center;
+  gap: var(--о-2);
+  padding: 12px 12px 12px 16px;
+  border-bottom: 1px solid var(--линия);
+  min-height: 56px;
+}
+.выезд-шапка b {
+  display: block;
+  font-size: var(--т-15);
+  font-weight: 640;
+}
+.выезд-шапка span {
+  font-size: var(--т-13);
+  color: var(--текст-2);
+}
+.выезд-шапка .кн-и {
+  margin-left: auto;
+}
+.выезд-тело {
+  overflow: auto;
+  flex: 1;
+}
+.группа {
+  padding: 14px 16px 16px;
+  border-bottom: 1px solid var(--линия);
+}
+.группа h3 {
+  font-size: var(--т-13);
+  font-weight: 560;
+  color: var(--текст-2);
+  margin-bottom: 10px;
+}
+.поля3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--о-2);
+}
+.поля2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--о-2);
+}
+.ряд-кнопок {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: var(--о-2);
+  margin-top: var(--о-2);
+}
+.пусто-панель {
+  padding: 20px 16px;
+  color: var(--текст-2);
+  font-size: var(--т-13);
+  line-height: 1.5;
+}
+.материалы {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--о-2);
+}
+.материал {
+  min-width: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  min-height: 56px;
+}
+.материал i {
+  display: block;
+  height: 36px;
+  border-radius: 7px 7px 0 0;
+  border: 1px solid var(--линия);
+  border-bottom: 0;
+}
+.материал span {
+  display: block;
+  font-size: var(--т-12);
+  padding: 5px 6px;
+  background: var(--поверх-2);
+  border-radius: 0 0 7px 7px;
+  color: var(--текст-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.материал:hover span {
+  color: var(--текст-1);
+}
+.материал[aria-pressed='true'] {
+  border-color: var(--латунь);
+}
+.материал[aria-pressed='true'] span {
+  color: var(--текст-1);
+}
+
+/* каталог */
+.каталог-поиск {
+  position: relative;
+  padding: 12px 16px 8px;
+}
+.каталог-поиск svg {
+  position: absolute;
+  left: 26px;
+  top: 22px;
+  color: var(--текст-3);
+}
+.каталог-поиск input {
+  width: 100%;
+  height: 36px;
+  background: var(--поверх-2);
+  color: var(--текст-1);
+  border: 1px solid transparent;
+  border-radius: var(--р-поле);
+  padding: 0 var(--о-2) 0 34px;
+  font: 400 14px var(--ш-текст);
+}
+.каталог-поиск input:focus {
+  outline: none;
+  border-color: var(--латунь);
+}
+.чипы {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 16px 12px;
+}
+.чип {
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px solid var(--линия);
+  background: transparent;
+  color: var(--текст-2);
+  font-size: var(--т-13);
+  font-weight: 560;
+  cursor: pointer;
+}
+.чип:hover {
+  background: var(--поверх-3);
+  color: var(--текст-1);
+}
+.чип[aria-pressed='true'] {
+  background: var(--поверх-3);
+  color: var(--латунь);
+  border-color: var(--латунь);
+}
+.заголовок-группы {
+  padding: 10px 16px 6px;
+  font-size: var(--т-13);
+  font-weight: 560;
+  color: var(--текст-2);
+}
+.позиция {
+  display: flex;
+  align-items: center;
+  gap: var(--о-3);
+  width: 100%;
+  min-height: 52px;
+  padding: 6px 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.позиция:hover {
+  background: var(--поверх-3);
+}
+.позиция .имя {
+  font-size: var(--т-13);
+  font-weight: 560;
+  line-height: 1.3;
+}
+.позиция .размер {
+  font-size: var(--т-13);
+  color: var(--текст-3);
+  font-variant-numeric: tabular-nums;
+}
+.позиция svg {
+  color: var(--текст-3);
+}
+
+/* нижняя строка */
+.низ {
+  grid-row: 3;
+  grid-column: 1 / 3;
+  display: flex;
+  align-items: center;
+  gap: var(--о-2);
+  padding: 0 12px;
+  background: var(--поверх-1);
+  border-top: 1px solid var(--линия);
+  z-index: 6;
+}
+.инстр {
+  display: flex;
+  gap: 2px;
+}
+.инстр button {
+  min-height: 34px;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: var(--о-2);
+  font-size: var(--т-13);
+  font-weight: 560;
+  color: var(--текст-2);
+  cursor: pointer;
+}
+.инстр button:hover {
+  background: var(--поверх-2);
+  color: var(--текст-1);
+}
+.инстр button[aria-pressed='true'] {
+  background: var(--поверх-3);
+  color: var(--текст-1);
+}
+.инстр button .кл {
+  padding: 3px 5px;
+}
+.разд-в {
+  width: 1px;
+  height: 24px;
+  background: var(--линия);
+  margin: 0 var(--о-1);
+}
+.низ select {
+  height: 32px;
+  background: var(--поверх-2);
+  color: var(--текст-1);
+  border: 1px solid transparent;
+  border-radius: var(--р-поле);
+  padding: 0 var(--о-2);
+  font: 400 var(--т-13) var(--ш-текст);
+}
+.низ .справа {
+  margin-left: auto;
+  display: flex;
+  gap: var(--о-2);
+  align-items: center;
+}
+
+/* сообщения и окна */
+.сообщение {
+  position: fixed;
+  left: 50%;
+  bottom: 60px;
+  transform: translateX(-50%);
+  max-width: 720px;
+  padding: 12px 18px;
+  border-radius: var(--р-панель);
+  background: var(--поверх-1);
+  border: 1px solid var(--линия);
+  box-shadow: var(--тень-3);
+  z-index: 40;
+  font-size: var(--т-13);
+  line-height: 1.45;
+}
+.сообщение.ошибка {
+  border-color: var(--опасно);
+}
+.загрузка {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  z-index: 60;
+}
+.ошибка-вебгл {
+  padding: 40px;
+  text-align: center;
+  color: var(--текст-2);
+}
+.восстановление {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 360px;
+  padding: 16px;
+  background: var(--поверх-1);
+  border: 1px solid var(--латунь);
+  border-radius: var(--р-панель);
+  box-shadow: var(--тень-3);
+  z-index: 50;
+}
+.восстановление p {
+  margin: 6px 0 12px;
+  color: var(--текст-2);
+  font-size: var(--т-13);
+}
+.восстановление .кнопки {
+  display: flex;
+  gap: var(--о-2);
+}
+
+/* ═════════ СТАРЫЕ ЭКРАНЫ (проекты, мастер комнаты): до 1Б-2 живут на новых токенах ═════════ */
+.экран-центр {
+  height: 100%;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--о-5);
+  padding: 40px 24px;
+  background: var(--фон);
+}
+.экран-центр h2 {
+  font-size: var(--т-24);
+  font-weight: 680;
+}
+.список-проектов {
+  width: min(960px, 94vw);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--о-4);
+}
+.проект-карточка {
+  background: var(--лист);
+  border-radius: var(--р-лист);
+  box-shadow:
+    var(--тень-1),
+    0 0 0 1px color-mix(in srgb, var(--лист-рамка) 30%, transparent);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.проект-карточка .превью {
+  height: 150px;
+  background-size: cover;
+  background-position: center;
+  display: grid;
+  place-items: center;
+  color: var(--синька);
+  background-color: var(--поверх-2);
+}
+.проект-карточка .тело {
+  padding: var(--о-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-2);
+}
+.проект-карточка .имя {
+  font-weight: 640;
+}
+.проект-карточка .мета {
+  font-size: var(--т-12);
+  color: var(--текст-2);
+}
+.форма {
+  width: min(560px, 94vw);
+  background: var(--поверх-1);
+  border: 1px solid var(--линия);
+  border-radius: var(--р-модал);
+  box-shadow: var(--тень-2);
+  padding: var(--о-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--о-3);
+}
+.форма .подзаголовок {
+  color: var(--текст-2);
+  font-size: var(--т-13);
+}
+.быстрые {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ряд {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--о-3);
+}
+.палитра {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.цвет {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--линия);
+  cursor: pointer;
+  padding: 0;
+}
+.цвет.активна {
+  outline: var(--фокус);
+  outline-offset: 2px;
 }

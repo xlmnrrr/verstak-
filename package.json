@@ -52,14 +52,26 @@
       "target": [
         "nsis",
         "portable"
-      ]
+      ],
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Верстак",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "uninstallDisplayName": "Верстак",
+      "artifactName": "Верстак-${version}-установщик.${ext}"
     },
     "directories": {
       "output": "release"
+    },
+    "portable": {
+      "artifactName": "Верстак-${version}-portable.${ext}"
     }
   },
   "author": "XLMNR"

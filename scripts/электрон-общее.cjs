@@ -53,7 +53,7 @@ function слушатьКонсоль(стр) {
 
 async function открытьПример(стр) {
   await стр.evaluate(() => {
-    const э = [...document.querySelectorAll('.карточка')].find((x) => x.textContent.includes('Пример кухни'));
+    const э = [...document.querySelectorAll('.действие')].find((x) => x.textContent.includes('Пример кухни'));
     if (э) э.click();
   });
   await пауза(2500);
