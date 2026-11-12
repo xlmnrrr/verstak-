@@ -110,3 +110,21 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 @media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } }
 /* на узком окне подписи кнопок нижней строки прячутся (остаются значки и подсказки), чтобы поместился бейдж «Свободная сборка» */
 @media (max-width: 1560px) { .низ .подпись-кн { display: none; } .плашка.свет input[type='range'] { width: 72px; } .инстр button { padding: 0 10px; } }
+
+/* окно «Проверки»: фильтры по важности и группы замечаний */
+.фильтры-проверок { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.чип-проверок { border: 1px solid var(--граница); background: transparent; color: var(--текст-2); min-height: 32px; padding: 0 12px; border-radius: 16px; font: 560 13px/1 var(--ш-текст); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+.чип-проверок b { font-variant-numeric: tabular-nums; color: var(--текст-1); }
+.чип-проверок:disabled { opacity: 0.5; cursor: default; }
+.чип-проверок[aria-pressed='true'] { background: var(--поверх-3); color: var(--текст-1); border-color: var(--латунь); }
+.группа-проверок h4 { margin: 12px 0 4px; font-size: 13px; font-weight: 640; color: var(--текст-2); letter-spacing: 0.02em; }
+.замечание { display: flex; align-items: center; gap: 8px; border-left: 3px solid var(--граница); }
+.замечание.ошибка { border-left-color: var(--опасно); }
+.замечание.ошибка .позиция svg { color: var(--опасно); }
+.замечание.предупреждение { border-left-color: var(--латунь); }
+.замечание.предупреждение .позиция svg { color: var(--латунь); }
+.замечание.совет { border-left-color: var(--синька); }
+.замечание.совет .позиция svg { color: var(--синька); }
+.замечание .позиция { flex: 1; min-width: 0; }
+.замечание .размер { white-space: normal; overflow-wrap: anywhere; }
+.к-второму { flex: none; max-width: 150px; display: block; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
