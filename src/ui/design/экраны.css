@@ -132,3 +132,9 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .исправления { flex: none; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
 .исправления .исправить { white-space: nowrap; border-color: var(--латунь); }
 .к-второму { flex: none; max-width: 150px; display: block; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* скелет панели свойств: виден один раз, пока монтируется настоящее содержимое */
+.скелет-блок { display: block; border-radius: 6px; background: var(--поверх-3); animation: скелет-мерцание 1.2s ease-in-out infinite; }
+.скелет-свойств .выезд-шапка { display: flex; gap: 12px; align-items: center; }
+@keyframes скелет-мерцание { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .скелет-блок { animation: none; } }
