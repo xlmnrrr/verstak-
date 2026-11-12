@@ -141,3 +141,68 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .скелет-свойств .выезд-шапка { display: flex; gap: 12px; align-items: center; }
 @keyframes скелет-мерцание { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .скелет-блок { animation: none; } }
+
+/* ───────── этап 7: проектировщик (планировка, разбор, сравнение) ───────── */
+.модал.окно.широкое { width: min(1120px, 96vw); max-height: 92vh; }
+.модал.окно.широкое .выезд-тело { max-height: calc(92vh - 60px); }
+.проектировщик { display: flex; flex-direction: column; gap: var(--о-3); position: relative; padding: var(--о-3) var(--о-5) var(--о-5); }
+.вкладки-проектировщика { align-self: flex-start; }
+.ряд-планировки { display: flex; flex-wrap: wrap; align-items: flex-end; gap: var(--о-3); }
+.ряд-планировки .поле { min-width: 260px; }
+.ряд-планировки .поле span { font-size: var(--т-12); color: var(--текст-3); }
+.подсказка-планировки { font-size: var(--т-13); color: var(--текст-3); flex: 1 1 260px; }
+.варианты { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--о-3); }
+.вариант { background: var(--поверх-2); border: 1px solid var(--линия); border-radius: var(--р-панель); padding: var(--о-3); display: flex; flex-direction: column; gap: var(--о-2); min-width: 0; }
+.вариант header { display: flex; justify-content: space-between; align-items: baseline; gap: var(--о-2); }
+.вариант header b { font-size: var(--т-15); }
+.метка-чисто { font-size: var(--т-12); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.метка-чисто.да { color: var(--готово); border: 1px solid color-mix(in srgb, var(--готово) 55%, transparent); }
+.метка-чисто.нет { color: var(--опасно); border: 1px solid color-mix(in srgb, var(--опасно) 55%, transparent); }
+.вариант-план { height: 170px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-поле); color: var(--текст-2); padding: 6px; }
+.вариант-план .план-листа { width: 100%; height: 100%; }
+.вариант-описание { font-size: var(--т-13); color: var(--текст-2); margin: 0; }
+.числа-варианта { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 4px; margin: 0; }
+.числа-варианта.широкие { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.числа-варианта div { background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-поле); padding: 4px 6px; min-width: 0; }
+.числа-варианта dt { font-size: var(--т-12); color: var(--текст-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.числа-варианта dd { margin: 0; font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: var(--т-15); color: var(--текст-1); white-space: nowrap; }
+.учтено { font-size: var(--т-13); color: var(--текст-2); }
+.учтено summary { cursor: pointer; color: var(--текст-1); min-height: 32px; display: flex; align-items: center; }
+.учтено ul, .замечания-варианта, .отказы { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; font-size: var(--т-13); }
+.замечания-варианта { color: var(--опасно); }
+.отказы { color: var(--текст-2); }
+.спросить { display: flex; flex-wrap: wrap; gap: var(--о-2); align-items: center; font-size: var(--т-13); color: var(--текст-2); }
+.вариант .ряд-кнопок { flex-wrap: wrap; gap: 6px; }
+.итог-разбора { font-size: var(--т-15); margin: 0; }
+.раздел-разбора h4 { margin: var(--о-2) 0; font-size: var(--т-15); }
+.список-разбора { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--о-2); }
+.пункт-разбора { border: 1px solid var(--линия); border-left: 3px solid var(--текст-3); border-radius: var(--р-поле); padding: var(--о-2) var(--о-3); background: var(--поверх-2); display: flex; flex-direction: column; gap: 4px; }
+.пункт-разбора.ошибка { border-left-color: var(--опасно); }
+.пункт-разбора.предупреждение { border-left-color: var(--латунь); }
+.пункт-разбора.совет { border-left-color: var(--синька); }
+.пункт-разбора p { margin: 0; font-size: var(--т-13); color: var(--текст-2); }
+.пункт-разбора p.предлагаю { color: var(--текст-1); }
+.пункт-шапка { display: flex; justify-content: space-between; align-items: center; gap: var(--о-2); }
+.метка-пункта { display: inline-block; min-width: 76px; font-size: var(--т-12); color: var(--текст-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.таблица-сравнения { width: 100%; border-collapse: collapse; font-size: var(--т-13); }
+.таблица-сравнения th, .таблица-сравнения td { border-bottom: 1px solid var(--линия); padding: 6px 8px; text-align: right; }
+.таблица-сравнения th:first-child, .таблица-сравнения td:first-child { text-align: left; }
+.таблица-сравнения td:not(:first-child) { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.таблица-сравнения tr.лучше td:last-child { color: var(--готово); }
+.таблица-сравнения tr.хуже td:last-child { color: var(--опасно); }
+.списки-сравнения { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--о-3); }
+.список-сравнения h4 { margin: 0 0 4px; font-size: var(--т-13); }
+.список-сравнения.лучше h4 { color: var(--готово); }
+.список-сравнения.хуже h4 { color: var(--опасно); }
+.список-сравнения ul { margin: 0; padding-left: 18px; font-size: var(--т-13); color: var(--текст-2); display: flex; flex-direction: column; gap: 3px; }
+
+/* шторка «До / после» поверх сцены */
+.шторка { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+.шторка-линия { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: var(--латунь); box-shadow: 0 0 0 1px rgb(0 0 0 / 0.35); }
+.шторка-ручка { pointer-events: auto; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--на-латуни); background: var(--латунь); color: var(--на-латуни); display: grid; place-items: center; cursor: ew-resize; box-shadow: var(--тень-2); touch-action: none; }
+.шторка-ручка:focus-visible { outline: 2px solid var(--фокус); outline-offset: 2px; }
+.шторка-метка { position: absolute; top: 12px; max-width: 40%; background: color-mix(in srgb, var(--поверх-1) 88%, transparent); border: 1px solid var(--линия); border-radius: var(--р-поле); padding: 6px 10px; font-size: var(--т-13); color: var(--текст-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.шторка-метка small { color: var(--латунь); text-transform: uppercase; letter-spacing: 0.06em; margin-right: 6px; font-size: var(--т-12); }
+.шторка-метка.слева { left: 12px; }
+.шторка-метка.справа { right: 12px; }
+.шторка-закрыть { pointer-events: auto; position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); }

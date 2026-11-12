@@ -11,6 +11,7 @@ import * as хранилище from '../lib/storage';
 import type { ЗаписьСписка } from '../lib/storage';
 import { Иконка } from './design/Иконки';
 import { Знак } from './design/Логотип';
+import { КартинкаЛиста } from './ЛистПроекта';
 
 const Линейка = () => {
   const засечки = [];
@@ -51,9 +52,7 @@ function Лист({ п, открыть }: { п: ЗаписьСписка; отк
   return (
     <button className="лист" type="button" onClick={открыть} title={`Открыть «${п.имя}»`}>
       <span className="лист-рамка" />
-      <span className="лист-картинка" style={п.превью ? { backgroundImage: `url(${п.превью})` } : undefined}>
-        {!п.превью && <Иконка имя="помещение" размер={32} />}
-      </span>
+      <КартинкаЛиста className="лист-картинка" превью={п.превью} схема={п.схема} />
       <span className="штамп">
         <span className="заг">{п.имя}</span>
         <span>Дата</span>

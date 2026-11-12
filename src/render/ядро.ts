@@ -8,7 +8,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { границыКонтура, высотаДляРендера } from '../model/помещение';
 import { проверитьВлезает, type Проблема } from '../model/проверка';
 import type { ПроектV2 } from '../model/типы';
-import { useКухня, зарегистрироватьПревью } from '../store';
+import { useКухня, зарегистрироватьПревью, снятьРегистрациюПревью } from '../store';
 import { useUI } from '../store/интерфейс';
 import { КамераОбзора } from './камера';
 import { Жесты } from './жесты';
@@ -35,6 +35,22 @@ import { Тени } from './тени';
 import { изделиеПоИд } from '../model/каталог';
 import { движенияИзделия, конфликтыЭкземпляра, открытыеГруппы, препятствияПомещения, развёртка, фигураВМире, type КонфликтОткрывания } from '../model/открывание';
 import { ПОЛОЖЕНИЕ_КАМЕРЫ } from './шейдер-плиты';
+
+/** Кадр почти одного цвета: разброс яркости по сетке точек меньше порога */
+function кадрПустой(ctx: CanvasRenderingContext2D, w: number, h: number): boolean {
+  const д = ctx.getImageData(0, 0, w, h).data;
+  let мин = 255;
+  let макс = 0;
+  for (let y = 4; y < h; y += 12) {
+    for (let x = 4; x < w; x += 12) {
+      const i = (y * w + x) * 4;
+      const я = 0.3 * д[i] + 0.59 * д[i + 1] + 0.11 * д[i + 2];
+      if (я < мин) мин = я;
+      if (я > макс) макс = я;
+    }
+  }
+  return макс - мин < 12;
+}
 
 export interface ОпцииЯдра {
   gl: THREE.WebGLRenderer;
@@ -176,6 +192,7 @@ export class Ядро {
     }
     this.подписаться();
     this.отпискаUI = useUI.subscribe(() => {
+      this.применитьШторку();
       this.применитьСвет();
       this.размерыГрязно = true;
       this.следитьЗаРулеткой();
@@ -188,7 +205,8 @@ export class Ядро {
     });
     this.наблюдательТемы.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    зарегистрироватьПревью(() => this.снятьПревью());
+    // превью снимает только сцена редактора: сцена обложки показывает демо и не должна попасть на лист проекта
+    if (this.режим === 'редактор') зарегистрироватьПревью(this.превьюФн);
     document.addEventListener('visibilitychange', this.видимость);
     gl.domElement.addEventListener('webglcontextrestored', this.контекстВосстановлен);
     this.hidden = document.hidden;
@@ -259,6 +277,99 @@ export class Ядро {
       const н = this.монитор.кадр(сейчас);
       if (н) this.переключитьКачество(н, 'кадры');
     }
+  }
+
+  /* ------------------------------------------------------------ «До / после» (этап 7) */
+
+  /** Второй проект для шторки: свой сборщик и пол в отдельной группе той же сцены (свет, тени и материалы общие) */
+  private шторкаБ: { проект: ПроектV2; группа: THREE.Group; сборщик: СборщикСцены; пол: ПолПомещения; материалПола: THREE.MeshStandardMaterial } | null = null;
+  private шторкаДоля = -1;
+
+  /** Помещение второго проекта: с тем же id, что активное, иначе первое */
+  private помещениеШторки(п: ПроектV2): string | undefined {
+    const активное = useКухня.getState().помещениеАктивное;
+    return (п.помещения.find((x) => x.id === активное) ?? п.помещения[0])?.id;
+  }
+
+  private убратьШторку() {
+    const б = this.шторкаБ;
+    if (!б) return;
+    б.сборщик.сброс();
+    б.пол.освободить();
+    б.материалПола.dispose();
+    this.о.scene.remove(б.группа);
+    this.шторкаБ = null;
+  }
+
+  private применитьШторку() {
+    if (this.режим !== 'редактор') return;
+    const ш = useUI.getState().шторка;
+    if (!ш) {
+      if (this.шторкаБ) {
+        this.убратьШторку();
+        this.тени.запросить();
+        this.попроситьКадр();
+      }
+      return;
+    }
+    if (this.шторкаБ?.проект !== ш.проект) {
+      this.убратьШторку();
+      const группа = new THREE.Group();
+      группа.name = 'шторка-после';
+      группа.visible = false;
+      this.о.scene.add(группа);
+      const материалПола = this.материалы.пол.clone();
+      const пол = new ПолПомещения(группа, материалПола, () => this.попроситьКадр());
+      const сборщик = new СборщикСцены(группа, this.материалы);
+      const помId = this.помещениеШторки(ш.проект);
+      if (помId) {
+        сборщик.применить(ш.проект, new Set([помId]));
+        пол.обновить(ш.проект.помещения.find((x) => x.id === помId));
+      }
+      this.шторкаБ = { проект: ш.проект, группа, сборщик, пол, материалПола };
+      this.тени.запросить();
+    }
+    if (ш.доля !== this.шторкаДоля) {
+      this.шторкаДоля = ш.доля;
+      this.попроситьКадр();
+    }
+  }
+
+  /**
+   * Кадр со шторкой: слева текущий проект, справа второй, одна камера. Два прохода с ножницами;
+   * тени пересчитываются на каждый проход (у проектов разная мебель). Вызывается из useFrame с приоритетом 1 —
+   * тогда R3F сам кадр не рисует. Возвращает false, если шторки нет.
+   */
+  отрисоватьШторку(): boolean {
+    const ш = useUI.getState().шторка;
+    const б = this.шторкаБ;
+    if (!ш || !б) return false;
+    const { gl, scene, camera } = this.о;
+    const w = gl.domElement.clientWidth;
+    const h = gl.domElement.clientHeight;
+    const x = Math.round(w * Math.min(1, Math.max(0, ш.доля)));
+    // всё, что относится к текущему проекту (мебель, пол, выделение, стрелки), справа прячем и возвращаем как было
+    const своё: THREE.Object3D[] = [this.сборщик.корень, this.пол.mesh, this.пол.пунктир, this.контурВыделения.линии, this.контурПроблем.линии, this.контурНаведения.линии, this.дуги.линии, this.стрелки.mesh, this.размерыЛинии.линии, this.направляющие.линии];
+    const было = своё.map((о) => о.visible);
+    gl.setScissorTest(true);
+    try {
+      // слева — «до» (текущий проект)
+      б.группа.visible = false;
+      gl.setScissor(0, 0, x, h);
+      gl.shadowMap.needsUpdate = true;
+      gl.render(scene, camera);
+      // справа — «после»
+      б.группа.visible = true;
+      for (const о of своё) о.visible = false;
+      gl.setScissor(x, 0, w - x, h);
+      gl.shadowMap.needsUpdate = true;
+      gl.render(scene, camera);
+    } finally {
+      gl.setScissorTest(false);
+      б.группа.visible = false;
+      своё.forEach((о, i) => (о.visible = было[i]));
+    }
+    return true;
   }
 
   /** Свет по времени суток: солнце, тени стен, лампы светильников вечером (до 4 штук) */
@@ -365,6 +476,11 @@ export class Ядро {
     if (новыйПроект) {
       this.сырыеПроблемы = null;
       this.открытий = с.открытий;
+      // открыли сохранённый проект: через 3 с (текстуры догрузились) обновляем его лист на обложке
+      if (this.режим === 'редактор') {
+        window.clearTimeout(this.таймерПревью);
+        this.таймерПревью = window.setTimeout(() => void useКухня.getState().освежитьПревью(), 3000);
+      }
       this.сборщик.сброс();
       this.lod.сброс();
       this.пол.обновить(undefined);
@@ -802,19 +918,71 @@ export class Ядро {
 
   /* ------------------------------------------------------------ превью и отладка */
 
+  /**
+   * Превью проекта для листа на обложке: своя камера «три четверти сверху», вписанная в габарит помещения,
+   * без сетки пола, стрелок и контуров. Раньше снимок брался текущей камерой редактора: помещение оказывалось
+   * полоской у края, а 2/3 кадра занимала тёмная сетка — на тёмном листе такое превью выглядело пустым.
+   * Кадр рисуется и копируется в одном задании, затем сразу перерисовывается обычной камерой: мигания нет.
+   */
   private снятьПревью(): string | undefined {
+    const { gl, scene, camera } = this.о;
+    const W = gl.domElement.width;
+    const H = gl.domElement.height;
+    if (!W || !H || this.освобождено) return undefined;
+    const скрытые: THREE.Object3D[] = [];
+    const скрыть = (о: THREE.Object3D | undefined | null) => {
+      if (о && о.visible) {
+        о.visible = false;
+        скрытые.push(о);
+      }
+    };
     try {
-      const { gl, scene, camera } = this.о;
-      gl.render(scene, camera);
-      const к = document.createElement('canvas');
-      к.width = 320;
-      к.height = Math.round((gl.domElement.height / gl.domElement.width) * 320) || 200;
-      const ctx = к.getContext('2d');
-      if (!ctx) return gl.domElement.toDataURL('image/jpeg', 0.6);
-      ctx.drawImage(gl.domElement, 0, 0, к.width, к.height);
-      return к.toDataURL('image/jpeg', 0.6);
+      const о = this.камераОбзора.текущаяОбласть;
+      const АСПЕКТ = 4 / 3;
+      const к = new THREE.PerspectiveCamera(40, W / H, 0.05, 300);
+      const cx = (о.x0 + о.x1) / 2;
+      const cz = (о.z0 + о.z1) / 2;
+      const ш = Math.max(0.5, о.x1 - о.x0);
+      const г = Math.max(0.5, о.z1 - о.z0);
+      const в = Math.max(1, о.высота);
+      const центр = new THREE.Vector3(cx, в * 0.38, cz);
+      const направление = new THREE.Vector3(Math.sin(0.62), 0.95, Math.cos(0.62)).normalize();
+      const радиус = 0.5 * Math.hypot(ш, г, в);
+      // вырезаем середину кадра 4:3; поле зрения по вырезу меньше, если холст уже 4:3
+      const tanВ = Math.tan(THREE.MathUtils.degToRad(20)) * Math.min(1, W / H / АСПЕКТ);
+      const tanГ = tanВ * АСПЕКТ;
+      const дальность = (радиус / Math.min(tanВ, tanГ)) * 0.98;
+      к.position.copy(центр).addScaledVector(направление, дальность);
+      к.lookAt(центр);
+      к.updateMatrixWorld();
+      скрыть(scene.getObjectByName('сетка-пола'));
+      скрыть(this.стрелки.mesh);
+      for (const л of [this.контурВыделения.линии, this.контурПроблем.линии, this.контурНаведения.линии, this.дуги.линии, this.направляющие.линии, this.размерыЛинии.линии]) скрыть(л);
+      ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(к.position);
+      gl.shadowMap.needsUpdate = true;
+      gl.render(scene, к);
+      const вырезШ = W / H > АСПЕКТ ? Math.round(H * АСПЕКТ) : W;
+      const вырезВ = W / H > АСПЕКТ ? H : Math.round(W / АСПЕКТ);
+      const холст = document.createElement('canvas');
+      холст.width = 400;
+      холст.height = 300;
+      const ctx = холст.getContext('2d');
+      if (!ctx) return undefined;
+      ctx.drawImage(gl.domElement, (W - вырезШ) / 2, (H - вырезВ) / 2, вырезШ, вырезВ, 0, 0, холст.width, холст.height);
+      // пустой кадр (сцена ещё не построена, потерян контекст) не сохраняем: на листе останется прежнее превью или план
+      if (кадрПустой(ctx, холст.width, холст.height)) return undefined;
+      return холст.toDataURL('image/jpeg', 0.78);
     } catch {
       return undefined;
+    } finally {
+      for (const о of скрытые) о.visible = true;
+      ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(camera.position);
+      try {
+        gl.render(scene, camera);
+      } catch {
+        /* следующий кадр всё равно перерисует */
+      }
+      this.попроситьКадр();
     }
   }
 
@@ -827,8 +995,14 @@ export class Ядро {
     return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
   }
 
+  private readonly превьюФн = () => this.снятьПревью();
+  private таймерПревью = 0;
+
   освободить() {
     this.освобождено = true;
+    window.clearTimeout(this.таймерПревью);
+    this.убратьШторку();
+    снятьРегистрациюПревью(this.превьюФн);
     this.отписка?.();
     this.отпискаUI?.();
     for (const л of this.лампы) this.о.scene.remove(л);

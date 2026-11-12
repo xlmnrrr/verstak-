@@ -6,6 +6,7 @@ import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Grid } from '@react-three/drei';
 import { useКухня } from '../store';
+import { useUI } from '../store/интерфейс';
 import { Ядро } from './ядро';
 import { ПРОФИЛИ, определитьВидеокарту, профильПоВидеокарте } from './качество';
 import { вКлиентские } from './отладка';
@@ -43,6 +44,15 @@ function ЯдроРендера({ оверлей, режим }: { оверлей
   useFrame((state, dt) => {
     ядро.current?.кадр(dt, performance.now());
   });
+  // «До / после»: пока шторка открыта, кадр рисует ядро двумя проходами (useFrame с приоритетом 1 отключает рендер R3F)
+  const шторка = useUI((s) => !!s.шторка) && режим === 'редактор';
+  return шторка ? <ПроходШторки ядро={ядро} /> : null;
+}
+
+function ПроходШторки({ ядро }: { ядро: React.RefObject<Ядро | null> }) {
+  useFrame((state) => {
+    if (!ядро.current?.отрисоватьШторку()) state.gl.render(state.scene, state.camera);
+  }, 1);
   return null;
 }
 
@@ -63,6 +73,7 @@ function СеткаПола({ показывать }: { показывать: bo
   const видна = useКухня((s) => s.сеткаВидна);
   return (
     <Grid
+      name="сетка-пола"
       visible={видна && показывать}
       args={[40, 40]}
       cellSize={шаг / 1000}

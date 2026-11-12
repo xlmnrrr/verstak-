@@ -6,6 +6,7 @@ import { app, BrowserWindow, ipcMain, dialog, shell, screen } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { очиститьИмя } from './имя-файла.mjs';
+import { схемаПлана } from './схема-плана.mjs';
 
 const DEV_URL = process.env.КУХНЯ_DEV_URL || '';
 
@@ -162,8 +163,12 @@ ipcMain.handle('проекты:список', async () => {
       const полный = path.join(п, ф);
       const ст = fs.statSync(полный);
       let объектов = 0;
+      let схема;
       try {
-        объектов = (JSON.parse(fs.readFileSync(полный, 'utf8')).объекты ?? []).length;
+        const данные = JSON.parse(fs.readFileSync(полный, 'utf8'));
+        объектов = (данные.объекты ?? []).length;
+        // план для листа, если превью-картинки нет
+        схема = схемаПлана(данные);
       } catch {
         /* файл битый — покажем как есть */
       }
@@ -178,6 +183,7 @@ ipcMain.handle('проекты:список', async () => {
         размер: ст.size,
         объектов,
         превью,
+        схема,
       };
     })
     .sort((a, b) => (a.изменён < b.изменён ? 1 : -1));
