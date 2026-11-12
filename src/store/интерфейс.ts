@@ -19,6 +19,7 @@ interface Сохраняемое {
   комнатаКат: string | null;
   последняяВкладка: string | null;
   автозапуск: boolean;
+  акцент: string;
 }
 
 const умолчание: Сохраняемое = {
@@ -31,6 +32,7 @@ const умолчание: Сохраняемое = {
   комнатаКат: null,
   последняяВкладка: null,
   автозапуск: false,
+  акцент: 'латунь',
 };
 
 function читать(): Сохраняемое {
@@ -45,6 +47,10 @@ interface UI extends Сохраняемое {
   окно: Окно;
   планОткрыт: boolean;
   показатьКлиенту: boolean;
+  /** час суток 6…22; свет по времени включается ползунком */
+  час: number;
+  часВключён: boolean;
+  установитьЧас: (ч: number | null) => void;
   установить: (п: Partial<Сохраняемое>) => void;
   открытьОкно: (о: Окно) => void;
   переключитьИзбранное: (ид: string) => void;
@@ -73,6 +79,9 @@ export const useUI = create<UI>((set, get) => {
     окно: null,
     планОткрыт: false,
     показатьКлиенту: false,
+    час: 14,
+    часВключён: false,
+    установитьЧас: (ч) => set(ч === null ? { часВключён: false } : { час: ч, часВключён: true }),
     установить: (п) => {
       сохранить(п);
       set(п);
@@ -85,3 +94,5 @@ export const useUI = create<UI>((set, get) => {
     переключитьПлан: (о) => set({ планОткрыт: о ?? !get().планОткрыт }),
   };
 });
+
+if (typeof window !== "undefined") (window as unknown as Record<string, unknown>).__верстакUI ??= useUI;

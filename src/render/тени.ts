@@ -6,13 +6,15 @@
 import * as THREE from 'three';
 import type { Профиль } from './качество';
 
-const НАПРАВЛЕНИЕ = new THREE.Vector3(3, 10, 2).normalize();
+const НАПРАВЛЕНИЕ_ПО_УМОЛЧАНИЮ = new THREE.Vector3(3, 10, 2).normalize();
 
 export class Тени {
   readonly свет: THREE.DirectionalLight;
   readonly заполняющий: THREE.DirectionalLight;
   readonly полусфера: THREE.HemisphereLight;
   private нужно = true;
+  private направление = НАПРАВЛЕНИЕ_ПО_УМОЛЧАНИЮ.clone();
+  private границы: THREE.Box3 | null = null;
   /** сколько раз карта теней пересчитывалась (для отчёта и проверок) */
   пересчётов = 0;
   private последнийПересчёт = 0;
@@ -49,11 +51,12 @@ export class Тени {
 
   /** Подогнать камеру тени под границы сцены (метры) + 0,3 м */
   подогнать(б: THREE.Box3) {
+    this.границы = б;
     const центр = б.getCenter(new THREE.Vector3());
     const размер = б.getSize(new THREE.Vector3());
     const R = Math.max(1, размер.length() / 2 + 0.3);
     const расстояние = R * 1.2 + 1;
-    this.свет.position.copy(центр).addScaledVector(НАПРАВЛЕНИЕ, расстояние);
+    this.свет.position.copy(центр).addScaledVector(this.направление, расстояние);
     this.свет.target.position.copy(центр);
     const к = this.свет.shadow.camera;
     к.left = -R;
@@ -64,6 +67,30 @@ export class Тени {
     к.far = расстояние + R * 1.1;
     к.updateProjectionMatrix();
     this.свет.target.updateMatrixWorld();
+    this.запросить();
+  }
+
+  /**
+   * Солнце по времени суток (6…22): восток утром, юг днём, запад вечером; низкое солнце тёплое и слабее.
+   * null — как раньше (фиксированный свет). Вечером и ночью падают рассеянный свет и солнце.
+   */
+  установитьСолнце(час: number | null) {
+    if (час === null) {
+      this.направление.copy(НАПРАВЛЕНИЕ_ПО_УМОЛЧАНИЮ);
+      this.свет.intensity = 1.5;
+      this.свет.color.set('#ffffff');
+      this.полусфера.intensity = 0.75;
+    } else {
+      const t = Math.min(1, Math.max(0, (час - 6) / 16));
+      const высота = 0.09 + Math.sin(Math.PI * t) * 1.0; // радианы над горизонтом: 5° утром, ~62° в 14:00
+      const a = Math.PI * t;
+      this.направление.set(Math.cos(a) * Math.cos(высота), Math.sin(высота), Math.sin(a) * Math.cos(высота)).normalize();
+      const яркость = Math.min(1, Math.sin(Math.PI * t) * 1.6);
+      this.свет.intensity = 0.15 + 1.4 * яркость;
+      this.свет.color.set('#ffd7a3').lerp(new THREE.Color('#ffffff'), Math.min(1, высота / 0.8));
+      this.полусфера.intensity = 0.28 + 0.5 * яркость;
+    }
+    if (this.границы) this.подогнать(this.границы);
     this.запросить();
   }
 

@@ -11,6 +11,8 @@ import { смета, подписьЛистов, type Смета } from '../mode
 import type { Obj } from '../types';
 import { Иконка, type ИмяИконки } from './design/Иконки';
 import { Знак } from './design/Логотип';
+import { БИБЛИОТЕКА, ГРУППЫ_ДЛЯ_ЧАСТИ } from '../data/библиотека';
+import type { КлючМатериала } from '../model/типы';
 import { useUI } from '../store/интерфейс';
 import { Каталог } from './Каталог';
 import { МиниКарта, ПланКвартиры } from './План';
@@ -223,34 +225,57 @@ function Материалы({ список, выбран, выбрать }: { с
   );
 }
 
-/** Материалы: поиск, избранное, свой цвет и пипетка (EyeDropper есть в Chromium/Electron) */
-function ПанельЦвета({ выбран, выбрать }: { выбран: string | undefined; выбрать: (цвет: string, имя: string) => void }) {
+const ЧАСТИ: [string, string][] = [
+  ['фасад', 'Фасад'],
+  ['корпус', 'Корпус'],
+  ['столешница', 'Столешница'],
+  ['цоколь', 'Цоколь'],
+  ['ручки', 'Ручки'],
+  ['техника', 'Техника'],
+];
+
+/** Материалы по частям изделия: библиотека с текстурами, поиск, избранное, пипетка и свой цвет */
+function ПанельМатериалов() {
+  const [часть, установитьЧасть] = useState('фасад');
   const [поиск, установитьПоиск] = useState('');
   const { избранныеМатериалы, свойЦвета } = useUI();
   const ui = useUI.getState();
-  const список = ФАСАДЫ.filter((м) => !поиск.trim() || м.название.toLowerCase().includes(поиск.trim().toLowerCase())).sort((a, b) => Number(избранныеМатериалы.includes(b.id)) - Number(избранныеМатериалы.includes(a.id)));
+  const задать = useКухня((s) => s.задатьМатериал);
+  const текущий = useКухня((s) => {
+    const о = s.проект2.объекты.find((x) => x.id === s.выбрано[0]);
+    return о?.материалы?.[часть as КлючМатериала];
+  });
+  const группы = ГРУППЫ_ДЛЯ_ЧАСТИ[часть] ?? [];
+  const список = БИБЛИОТЕКА.filter((м) => группы.includes(м.группа) && (!поиск.trim() || м.название.toLowerCase().includes(поиск.trim().toLowerCase()))).sort((a, b) => Number(избранныеМатериалы.includes(b.id)) - Number(избранныеМатериалы.includes(a.id)));
   const пипетка = async () => {
     const Е = (window as unknown as { EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper;
     if (!Е) return;
     try {
       const р = await new Е().open();
       ui.добавитьСвойЦвет(р.sRGBHex);
-      выбрать(р.sRGBHex, `Свой цвет ${р.sRGBHex}`);
+      задать(часть as КлючМатериала, р.sRGBHex);
     } catch {
       /* отменено */
     }
   };
   return (
     <div>
-      <div className="каталог-поиск" style={{ padding: 0, marginBottom: 8 }}>
+      <div className="сегменты части" role="group" aria-label="Часть изделия">
+        {ЧАСТИ.map(([ид, имя]) => (
+          <button key={ид} type="button" aria-pressed={часть === ид} onClick={() => установитьЧасть(ид)}>
+            {имя}
+          </button>
+        ))}
+      </div>
+      <div className="каталог-поиск" style={{ padding: 0, margin: '8px 0' }}>
         <Иконка имя="поиск" />
         <input placeholder="Поиск материала" value={поиск} onChange={(e) => установитьПоиск(e.target.value)} aria-label="Поиск материала" />
       </div>
       <div className="материалы">
         {список.map((м) => (
           <div key={м.id} className="материал-ячейка">
-            <button type="button" className="материал" aria-pressed={выбран === м.цвет} title={м.название} onClick={() => выбрать(м.цвет, м.название)}>
-              <i style={{ background: м.цвет }} />
+            <button type="button" className="материал" aria-pressed={текущий === м.id} title={м.название} onClick={() => задать(часть as КлючМатериала, м.id)}>
+              <i style={{ background: м.текстура ? `url(./Библиотека/текстуры/${м.текстура}.webp) center/220% , ${м.цвет}` : м.цвет, backgroundBlendMode: м.текстура ? 'multiply' : undefined }} />
               <span>{м.название}</span>
             </button>
             <button type="button" className="звезда-мал" aria-pressed={избранныеМатериалы.includes(м.id)} aria-label="В избранное" title="В избранное" onClick={() => ui.переключитьИзбранныйМатериал(м.id)}>
@@ -265,13 +290,13 @@ function ПанельЦвета({ выбран, выбрать }: { выбран
         </button>
         <label className="кн цвет-свой" title="Свой цвет">
           Свой цвет
-          <input type="color" value={выбран && выбран.startsWith('#') ? выбран : '#c08a4a'} onChange={(e) => выбрать(e.target.value, `Свой цвет ${e.target.value}`)} aria-label="Выбрать свой цвет" />
+          <input type="color" value={текущий && текущий.startsWith('#') ? текущий : '#c08a4a'} onChange={(e) => задать(часть as КлючМатериала, e.target.value)} aria-label="Выбрать свой цвет" />
         </label>
       </div>
       {свойЦвета.length > 0 && (
         <div className="палитра" style={{ marginTop: 8 }}>
           {свойЦвета.map((ц) => (
-            <button key={ц} type="button" className={`цвет ${выбран === ц ? 'активна' : ''}`} style={{ background: ц }} aria-label={`Свой цвет ${ц}`} title={ц} onClick={() => выбрать(ц, `Свой цвет ${ц}`)} />
+            <button key={ц} type="button" className={`цвет ${текущий === ц ? 'активна' : ''}`} style={{ background: ц }} aria-label={`Свой цвет ${ц}`} title={ц} onClick={() => задать(часть as КлючМатериала, ц)} />
           ))}
         </div>
       )}
@@ -394,8 +419,8 @@ function Свойства() {
         </section>
 
         <section className="группа">
-          <h3>Фасад и цвет</h3>
-          <ПанельЦвета выбран={о.цвет} выбрать={(ц, имя) => правка(() => обновитьОбъект(о.id, { цвет: ц, материал: имя }))} />
+          <h3>Материалы</h3>
+          <ПанельМатериалов />
         </section>
 
         <section className="группа">
@@ -452,10 +477,18 @@ function НастройкиКомнаты() {
       <section className="группа">
         <h3>Обои</h3>
         <Материалы список={ОБОИ} выбран={комната.обои} выбрать={(м) => обновитьКомнату({ обои: м.цвет })} />
+        <label className="кн цвет-свой" style={{ marginTop: 8 }}>
+          Свой цвет обоев
+          <input type="color" value={комната.обои.startsWith('#') ? комната.обои : '#cbb79a'} onChange={(e) => обновитьКомнату({ обои: e.target.value })} aria-label="Свой цвет обоев" />
+        </label>
       </section>
       <section className="группа">
         <h3>Пол</h3>
         <Материалы список={ПОЛЫ} выбран={комната.пол} выбрать={(м) => обновитьКомнату({ пол: м.цвет })} />
+        <label className="кн цвет-свой" style={{ marginTop: 8 }}>
+          Свой цвет пола
+          <input type="color" value={комната.пол.startsWith('#') ? комната.пол : '#8a6a4b'} onChange={(e) => обновитьКомнату({ пол: e.target.value })} aria-label="Свой цвет пола" />
+        </label>
       </section>
       <section className="группа">
         <h3>Фон сцены</h3>
@@ -591,6 +624,8 @@ function Низ() {
   const прошлое = useКухня((s) => s.прошлое.length);
   const будущее = useКухня((s) => s.будущее.length);
   const проблем = useКухня((s) => s.проблем);
+  const час = useUI((u) => u.час);
+  const часВключён = useUI((u) => u.часВключён);
   const с = useСмета();
   const инструменты = useMemo(
     () => [
@@ -633,6 +668,23 @@ function Низ() {
         <Иконка имя="вернуть" размер={18} />
       </button>
       <div className="справа">
+        <label className="плашка свет" title="Свет по времени суток: солнце из окон, вечером включаются светильники">
+          <Иконка имя="тема" размер={18} />
+          <input
+            type="range"
+            min={6}
+            max={22}
+            step={0.5}
+            value={час}
+            aria-label="Время суток"
+            onChange={(e) => useUI.getState().установитьЧас(Number(e.target.value))}
+          />
+          <b>{часВключён ? `${Math.floor(час)}:${час % 1 ? '30' : '00'}` : 'день'}</b>
+        </label>
+        <button className="кн" type="button" title="Показать клиенту: весь экран, интерфейс скрыт" onClick={() => useUI.setState({ показатьКлиенту: true })}>
+          <Иконка имя="пример" размер={18} />
+          Показать клиенту
+        </button>
         <span className="плашка" title="Живая смета по деталям чертежа: листы ЛДСП 2750 × 1830 без отхода">
           <b>{с.изделий}</b> изделий · <b>{подписьЛистов(с.листов)}</b> · <b>{с.кромкаМ.toFixed(0)}</b> м кромки
         </span>
@@ -645,6 +697,61 @@ function Низ() {
   );
 }
 
+/* ------------------------------------------------------------------ показать клиенту */
+
+const ФАСАДЫ_КЛИЕНТУ = ['лдсп-белый-мат', 'дуб-натуральный', 'орех', 'лдсп-графит-глянец', 'лдсп-под-дерево', 'шпон-дуба'];
+const СТОЛЕШНИЦЫ_КЛИЕНТУ = ['мрамор-каррара', 'мрамор-калакатта', 'гранит-чёрный', 'кварц-светлый'];
+
+function выйтиИзКлиента() {
+  useUI.setState({ показатьКлиенту: false });
+  if (document.fullscreenElement) void document.exitFullscreen();
+}
+
+/** Режим «Показать клиенту»: интерфейс уходит, весь экран, облёт, переключение материалов, «открыть всё» */
+function ПанельКлиента() {
+  const задать = useКухня((s) => s.задатьМатериал);
+  const открытьВсё = useКухня((s) => s.открытьВсё);
+  const [открыто, установитьОткрыто] = useState(false);
+  useEffect(() => {
+    void document.documentElement.requestFullscreen?.().catch(() => undefined);
+    const к = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation();
+        выйтиИзКлиента();
+      }
+    };
+    window.addEventListener('keydown', к, true);
+    return () => window.removeEventListener('keydown', к, true);
+  }, []);
+  return (
+    <div className="панель-клиента" role="toolbar" aria-label="Показ клиенту">
+      <div className="клиент-ряд">
+        <span>Фасады</span>
+        {ФАСАДЫ_КЛИЕНТУ.map((ид) => {
+          const м = БИБЛИОТЕКА.find((x) => x.id === ид)!;
+          return (
+            <button key={ид} type="button" className="цвет" title={м.название} aria-label={м.название} style={{ background: м.текстура ? `url(./Библиотека/текстуры/${м.текстура}.webp) center/300%, ${м.цвет}` : м.цвет, backgroundBlendMode: м.текстура ? 'multiply' : undefined }} onClick={() => задать('фасад', ид, true)} />
+          );
+        })}
+      </div>
+      <div className="клиент-ряд">
+        <span>Столешница</span>
+        {СТОЛЕШНИЦЫ_КЛИЕНТУ.map((ид) => {
+          const м = БИБЛИОТЕКА.find((x) => x.id === ид)!;
+          return <button key={ид} type="button" className="цвет" title={м.название} aria-label={м.название} style={{ background: `url(./Библиотека/текстуры/${м.текстура}.webp) center/300%, ${м.цвет}`, backgroundBlendMode: 'multiply' }} onClick={() => задать('столешница', ид, true)} />;
+        })}
+      </div>
+      <button className="кн" type="button" onClick={() => { открытьВсё(!открыто); установитьОткрыто(!открыто); }}>
+        <Иконка имя="открыть-дверь" размер={18} />
+        {открыто ? 'Закрыть всё' : 'Открыть всё'}
+      </button>
+      <button className="кн главная" type="button" onClick={выйтиИзКлиента}>
+        Выйти (Esc)
+      </button>
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ сборка */
 
 /** Стабильный элемент: Холст в memo не должен перерисовываться от каждого рендера редактора */
@@ -653,8 +760,9 @@ const ОСТРОВОК = <Островок />;
 export function Редактор({ ошибка3D }: { ошибка3D: string | null }) {
   const закрытьКаталог = useКухня((s) => s.переключитьКаталог);
   const планОткрыт = useUI((s) => s.планОткрыт);
+  const клиент = useUI((s) => s.показатьКлиенту);
   return (
-    <div className="редактор">
+    <div className={`редактор${клиент ? ' клиент' : ''}`}>
       <Полоса />
       <Верх />
       <div
@@ -679,6 +787,7 @@ export function Редактор({ ошибка3D }: { ошибка3D: string | 
         <ПраваяПанель />
       </div>
       <Низ />
+      {клиент && <ПанельКлиента />}
     </div>
   );
 }

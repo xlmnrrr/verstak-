@@ -6,7 +6,8 @@
  */
 import * as THREE from 'three';
 import { ФАСАДЫ, СТОЛЕШНИЦЫ, ОБОИ, ПОЛЫ } from '../data/materials';
-import { ключПрограммы, определения, патчГлубины, патчЦвета, type ОпцииШейдера } from './шейдер-плиты';
+import { ПОИД, слойТекстуры, ТЕКСТУРЫ, МАСШТАБ_ТЕКСТУР } from '../data/библиотека';
+import { МАССИВ_ТЕКСТУР, МАСШТАБЫ_СЛОЁВ, ключПрограммы, определения, патчГлубины, патчЦвета, type ОпцииШейдера } from './шейдер-плиты';
 
 export type КлассМатериала = 'плита' | 'плита-фаска' | 'прим' | 'стена' | 'стекло';
 
@@ -21,6 +22,8 @@ export interface Поверхность {
   цвет: [number, number, number];
   шер: number;
   мет: number;
+  /** слой текстуры (1…N), 0 — без текстуры */
+  слой?: number;
 }
 
 const цветаКэш = new Map<string, [number, number, number]>();
@@ -47,6 +50,7 @@ const УМОЛЧАНИЕ: Record<string, { цвет: string; шер: number; м�
   стекло: { цвет: '#bcd8e8', шер: 0.05, мет: 0 },
   зеркало: { цвет: '#cfe4ec', шер: 0.06, мет: 0.95 },
   техника: { цвет: '#e8eaec', шер: 0.45, мет: 0.2 },
+  цоколь: { цвет: '#cfc7ba', шер: 0.75, мет: 0.05 },
 };
 
 const поИд = new Map<string, { цвет: string; шер: number; мет: number }>();
@@ -64,6 +68,12 @@ export function поверхность(значение: string | undefined, к�
   if (в) return в;
   const ум = УМОЛЧАНИЕ[ключ] ?? УМОЛЧАНИЕ.корпус;
   let п: Поверхность;
+  const бм = значение ? ПОИД.get(значение) : undefined;
+  if (бм) {
+    const р = { цвет: цветИзСтроки(бм.цвет), шер: бм.шер, мет: бм.мет, слой: слойТекстуры(бм.текстура) };
+    поверхностиКэш.set(имя, р);
+    return р;
+  }
   if (!значение) п = { цвет: цветИзСтроки(ум.цвет), шер: ум.шер, мет: ум.мет };
   else if (значение.startsWith('#')) {
     // ручки и зеркала сохраняют металл, у обычных плит — умолчание
@@ -77,6 +87,53 @@ export function поверхность(значение: string | undefined, к�
 }
 
 export const умолчаниеПоверхности = (ключ: string): Поверхность => поверхность(undefined, ключ);
+
+const РАЗМЕР_ТЕКСТУРЫ = 512;
+const СЛОЁВ = 16;
+let загружено: Promise<void> | null = null;
+
+/** Пустая текстура-заглушка, пока файлы не загрузились (sampler2DArray должен быть всегда привязан) */
+function заглушка() {
+  const т = new THREE.DataArrayTexture(new Uint8Array(4 * 4 * 4).fill(255), 1, 1, 4);
+  т.needsUpdate = true;
+  return т;
+}
+МАССИВ_ТЕКСТУР.value = заглушка();
+ТЕКСТУРЫ.forEach((имя, i) => (МАСШТАБЫ_СЛОЁВ.value[i + 1] = МАСШТАБ_ТЕКСТУР[имя] ?? 0.6));
+
+/** Грузит WebP-текстуры из папки приложения в один массив (работает офлайн); вызывается один раз */
+export function загрузитьТекстуры(основа = './Библиотека/текстуры/'): Promise<void> {
+  if (загружено) return загружено;
+  загружено = (async () => {
+    const данные = new Uint8Array(РАЗМЕР_ТЕКСТУРЫ * РАЗМЕР_ТЕКСТУРЫ * 4 * СЛОЁВ);
+    const холст = document.createElement('canvas');
+    холст.width = холст.height = РАЗМЕР_ТЕКСТУРЫ;
+    const g = холст.getContext('2d', { willReadFrequently: true })!;
+    for (let i = 0; i < ТЕКСТУРЫ.length; i++) {
+      try {
+        const ответ = await fetch(`${основа}${ТЕКСТУРЫ[i]}.webp`);
+        const картинка = await createImageBitmap(await ответ.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+        g.clearRect(0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ);
+        g.drawImage(картинка, 0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ);
+        // canvas хранит премультиплицированную альфу; шероховатость 0.1…0.95 нас устраивает без обратного пересчёта цвета
+        данные.set(g.getImageData(0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ).data, i * РАЗМЕР_ТЕКСТУРЫ * РАЗМЕР_ТЕКСТУРЫ * 4);
+      } catch {
+        /* нет файла — слой остаётся пустым (цвет материала виден без узора) */
+      }
+    }
+    const т = new THREE.DataArrayTexture(данные, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ, СЛОЁВ);
+    т.format = THREE.RGBAFormat;
+    т.colorSpace = THREE.SRGBColorSpace;
+    т.wrapS = т.wrapT = THREE.RepeatWrapping;
+    т.minFilter = THREE.LinearMipmapLinearFilter;
+    т.magFilter = THREE.LinearFilter;
+    т.generateMipmaps = true;
+    т.anisotropy = 4;
+    т.needsUpdate = true;
+    МАССИВ_ТЕКСТУР.value = т;
+  })();
+  return загружено;
+}
 
 export interface НаборМатериалов {
   цвет: Record<КлассМатериала, THREE.MeshStandardMaterial>;

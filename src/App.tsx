@@ -5,6 +5,7 @@ import { Редактор } from './ui/Редактор';
 import { Мастер } from './ui/Мастер';
 import { ЭкранПроектов, ОкноПоверх, ПервыйЗапуск } from './ui/Экраны';
 import { useUI } from './store/интерфейс';
+import { АКЦЕНТЫ } from './ui/Экраны';
 import { Спрайт } from './ui/design/Иконки';
 import { запуститьАвтосохранение } from './store/автосохранение';
 
@@ -35,6 +36,27 @@ export default function App() {
   const восстановитьАвто = useКухня((s) => s.восстановитьАвто);
   const отброситьАвто = useКухня((s) => s.отброситьАвто);
   useТема();
+  const акцент = useUI((u) => u.акцент);
+  const тема = useКухня((s) => s.тема);
+  useEffect(() => {
+    const к = АКЦЕНТЫ[акцент] ?? АКЦЕНТЫ.латунь;
+    const стиль = document.documentElement.style;
+    // выбор акцента перекрывает токены --латунь и --на-латуни; «латунь» — стандарт без перекрытия
+    const применить = () => {
+      if (акцент === 'латунь' || !АКЦЕНТЫ[акцент]) {
+        стиль.removeProperty('--латунь');
+        стиль.removeProperty('--на-латуни');
+        return;
+      }
+      const светлая = document.documentElement.dataset.theme === 'light';
+      стиль.setProperty('--латунь', светлая ? к[1] : к[0]);
+      стиль.setProperty('--на-латуни', светлая ? к[3] : к[2]);
+    };
+    применить();
+    const н = new MutationObserver(применить);
+    н.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    return () => н.disconnect();
+  }, [акцент, тема]);
   const турПройден = useUI((u) => u.туркПройден);
   const закрытьТур = () => useUI.getState().установить({ туркПройден: true });
 

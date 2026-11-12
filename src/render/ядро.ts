@@ -9,10 +9,11 @@ import { границыКонтура, высотаДляРендера } from '
 import { проверитьВлезает, type Проблема } from '../model/проверка';
 import type { ПроектV2 } from '../model/типы';
 import { useКухня, зарегистрироватьПревью } from '../store';
+import { useUI } from '../store/интерфейс';
 import { КамераОбзора } from './камера';
 import { Жесты } from './жесты';
 import { ВыборФаски } from './lod';
-import { создатьМатериалы, type НаборМатериалов } from './материалы';
+import { создатьМатериалы, загрузитьТекстуры, type НаборМатериалов } from './материалы';
 import { ПолПомещения } from './помещение';
 import {
   МониторКадров,
@@ -73,6 +74,9 @@ export class Ядро {
 
   private флагКадра = false;
   private отписка: (() => void) | null = null;
+  private отпискаUI: (() => void) | null = null;
+  private лампы: THREE.PointLight[] = [];
+  private последнийЧас: number | null | undefined = undefined;
   private открытий = -1;
   private ключОбласти = '';
   private ключГраниц = '';
@@ -119,12 +123,15 @@ export class Ядро {
     this.жесты = new Жесты({ el: gl.domElement, camera, сборщик: this.сборщик, стрелки: this.стрелки, камераОбзора: this.камераОбзора, попроситьКадр: () => this.попроситьКадр() });
 
     this.применитьПрофиль(this.профиль, 'старт');
+    void загрузитьТекстуры().then(() => this.попроситьКадр());
     if (this.режим === 'редактор') {
       this.камераОбзора.подключить();
       this.жесты.подключить();
     }
     this.подписаться();
+    this.отпискаUI = useUI.subscribe(() => this.применитьСвет());
     this.синхронизировать(true);
+    this.применитьСвет();
     this.наблюдательТемы = new MutationObserver(() => {
       this.синхронизировать(false);
       this.попроситьКадр();
@@ -168,7 +175,7 @@ export class Ядро {
     this.флагКадра = false;
     this.кадров++;
     const { camera, gl } = this.о;
-    if (this.режим === 'обложка') this.облёт(сейчас);
+    if (this.режим === 'обложка' || (this.режим === 'редактор' && useUI.getState().показатьКлиенту)) this.облёт(сейчас);
     this.камераОбзора.кадр(dt);
     ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(camera.position);
     camera.updateMatrixWorld();
@@ -185,6 +192,45 @@ export class Ядро {
       const н = this.монитор.кадр(сейчас);
       if (н) this.переключитьКачество(н, 'кадры');
     }
+  }
+
+  /** Свет по времени суток: солнце, тени стен, лампы светильников вечером (до 4 штук) */
+  private применитьСвет() {
+    if (this.режим !== 'редактор') return;
+    const u = useUI.getState();
+    const час = u.часВключён ? u.час : null;
+    if (час !== this.последнийЧас) {
+      this.последнийЧас = час;
+      this.тени.установитьСолнце(час);
+      this.сборщик.установитьТеньСтен(час !== null);
+      this.обновитьЛампы();
+      this.попроситьКадр();
+    }
+    if (u.показатьКлиенту !== this.клиентБыл) {
+      this.клиентБыл = u.показатьКлиенту;
+      this.попроситьКадр();
+    }
+  }
+  private клиентБыл = false;
+
+  private обновитьЛампы() {
+    const час = this.последнийЧас;
+    const ночь = час != null && (час >= 19 || час < 7.5);
+    const с = useКухня.getState();
+    const светильники = ночь ? с.проект2.объекты.filter((о) => о.помещение === с.помещениеАктивное && о.изделие.startsWith('светильник')).slice(0, 4) : [];
+    while (this.лампы.length < светильники.length) {
+      const л = new THREE.PointLight('#ffd9a0', 0, 7, 2);
+      this.о.scene.add(л);
+      this.лампы.push(л);
+    }
+    this.лампы.forEach((л, i) => {
+      const о = светильники[i];
+      л.visible = !!о;
+      if (о) {
+        л.position.set(о.позиция[0] / 1000, (о.позиция[1] + о.габариты.в * 0.9) / 1000, о.позиция[2] / 1000);
+        л.intensity = 14;
+      }
+    });
   }
 
   /** Обложка: медленный облёт камеры вокруг помещения (один постановочный момент приложения, §6 DESIGN.md) */
@@ -272,6 +318,7 @@ export class Ядро {
     const фонЭфф = this.эффективныйФон(с.проект2.настройки.фон);
     if (фонЭфф !== this.фонТекущий) this.установитьФон(фонЭфф);
 
+    if (изменилсяПроект && this.последнийЧас !== null) this.обновитьЛампы();
     if (изменилсяПроект || изменилсяВид) {
       р.в = с.выбрано;
       р.и = с.инструмент;
@@ -543,6 +590,8 @@ export class Ядро {
   освободить() {
     this.освобождено = true;
     this.отписка?.();
+    this.отпискаUI?.();
+    for (const л of this.лампы) this.о.scene.remove(л);
     this.наблюдательТемы?.disconnect();
     document.removeEventListener('visibilitychange', this.видимость);
     this.о.gl.domElement.removeEventListener('webglcontextrestored', this.контекстВосстановлен);

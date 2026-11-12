@@ -71,3 +71,14 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 .план-комната:hover polygon, .план-комната:focus polygon { fill: var(--поверх-3); }
 .план-комната.акт polygon { stroke: var(--латунь); }
 .план-дверь { fill: var(--синька); pointer-events: none; }
+
+.редактор.клиент { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.редактор.клиент .полоса, .редактор.клиент .верх, .редактор.клиент .низ, .редактор.клиент .мини-карта, .редактор.клиент .островок, .редактор.клиент .выезд, .редактор.клиент .язычок, .редактор.клиент .оверлей-меток { display: none; }
+.редактор.клиент .сцена { grid-column: 1; grid-row: 1; }
+.панель-клиента { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; padding: 10px 16px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: 16px; box-shadow: var(--тень-3); z-index: 30; flex-wrap: wrap; justify-content: center; max-width: 96vw; }
+.клиент-ряд { display: flex; gap: 6px; align-items: center; font-size: var(--т-13); color: var(--текст-2); }
+.плашка.свет { gap: 6px; }
+.плашка.свет input[type='range'] { width: 110px; accent-color: var(--латунь); }
+.сегменты.части { grid-template-columns: repeat(3, 1fr); grid-auto-flow: row; }
+.низ .плашка, .низ .кн { white-space: nowrap; }
+@media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } }

@@ -18,6 +18,10 @@ export interface ОпцииШейдера {
   стена: boolean;
 }
 
+/** Массив текстур материалов и масштаб (метров на повтор) каждого слоя: общий для всех групп плит */
+export const МАССИВ_ТЕКСТУР = { value: null as THREE.Texture | null };
+export const МАСШТАБЫ_СЛОЁВ = { value: new Float32Array(32).fill(1) };
+
 /** Общий uniform положения камеры для стен */
 export const ПОЛОЖЕНИЕ_КАМЕРЫ = { value: new THREE.Vector3() };
 
@@ -74,12 +78,39 @@ vSurf = aSurf;
 const ФРАГМЕНТ_ОБЩИЙ = /* glsl */ `
 varying vec4 vSurf;
 #ifdef DETAIL
+uniform highp sampler2DArray uTex;
+uniform float uTexScale[32];
+#endif
+#ifdef DETAIL
 varying vec3 vLocal;
 varying vec3 vHalf;
 varying vec3 vNl;
 varying vec3 vAx;
 varying vec3 vAy;
 varying vec3 vAz;
+#endif
+`;
+
+/** Текстура материала: UV из миллиметров детали, волокно вдоль длинной стороны; RGB × цвет, альфа — шероховатость */
+const ТЕКСТУРА = /* glsl */ `
+float texR = -1.0;
+#ifdef DETAIL
+{
+  int layer = int( vSurf.z + 0.5 ) >> 7;
+  if ( layer > 0 ) {
+    vec3 an = abs( vNl );
+    vec2 uv;
+    vec2 hs;
+    if ( an.x > 0.5 ) { uv = vec2( vLocal.z, vLocal.y ); hs = vec2( vHalf.z, vHalf.y ); }
+    else if ( an.y > 0.5 ) { uv = vec2( vLocal.x, vLocal.z ); hs = vec2( vHalf.x, vHalf.z ); }
+    else { uv = vec2( vLocal.x, vLocal.y ); hs = vec2( vHalf.x, vHalf.y ); }
+    if ( hs.y > hs.x ) uv = uv.yx;
+    uv = uv / uTexScale[ layer ] + 0.5;
+    vec4 t = texture( uTex, vec3( uv, float( layer - 1 ) ) );
+    diffuseColor.rgb *= t.rgb;
+    texR = t.a;
+  }
+}
 #endif
 `;
 
@@ -150,13 +181,15 @@ const d_set = (д: Record<string, string>, k: string) => {
 /** Патч шейдера цветового прохода (MeshStandardMaterial) */
 export function патчЦвета(шейдер: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) {
   шейдер.uniforms.uViewPos = ПОЛОЖЕНИЕ_КАМЕРЫ;
+  шейдер.uniforms.uTex = МАССИВ_ТЕКСТУР;
+  шейдер.uniforms.uTexScale = МАСШТАБЫ_СЛОЁВ;
   шейдер.vertexShader = шейдер.vertexShader
     .replace('#include <common>', `#include <common>\n${ВЕРШИНА_ОБЩАЯ}`)
     .replace('#include <begin_vertex>', НАЧАЛО_ВЕРШИНЫ);
   шейдер.fragmentShader = шейдер.fragmentShader
     .replace('#include <common>', `#include <common>\n${ФРАГМЕНТ_ОБЩИЙ}`)
-    .replace('#include <color_fragment>', `#include <color_fragment>\n${ЦВЕТ_ТОРЦА}`)
-    .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = vSurf.x;')
+    .replace('#include <color_fragment>', `#include <color_fragment>\n${ТЕКСТУРА}\n${ЦВЕТ_ТОРЦА}`)
+    .replace('#include <roughnessmap_fragment>', 'float roughnessFactor = texR >= 0.0 ? texR : vSurf.x;')
     .replace('#include <metalnessmap_fragment>', 'float metalnessFactor = vSurf.y;')
     .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>\n${ФАСКА_НОРМАЛИ}`);
 }
