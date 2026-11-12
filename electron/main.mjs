@@ -15,6 +15,8 @@ const здесь = import.meta.dirname; // папка electron/
 function папкаПриложения() {
   // для проверок: VERSTAK_DATA_DIR подменяет папку, где лежат Проекты\ и Бэкапы\ (боевые данные не трогаем)
   if (process.env.VERSTAK_DATA_DIR) return process.env.VERSTAK_DATA_DIR;
+  // portable-сборка распаковывается во временную папку: данные лежат рядом с настоящим .exe, а не рядом с распаковкой
+  if (process.env.PORTABLE_EXECUTABLE_DIR) return process.env.PORTABLE_EXECUTABLE_DIR;
   return app.isPackaged ? path.dirname(app.getPath('exe')) : path.join(здесь, '..');
 }
 

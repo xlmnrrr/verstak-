@@ -57,6 +57,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true
+    },
+    "directories": {
+      "output": "release"
     }
-  }
+  },
+  "author": "XLMNR"
 }

@@ -132,3 +132,22 @@ describe('стены из контура', () => {
     expect(стены.length).toBe(4 + 2);
   });
 });
+
+describe('пример кухни', () => {
+  it('демо-кухня после миграции открывается с нулём конфликтов валидатора', async () => {
+    const { собратьДемо } = await import('../lib/демо');
+    const { мигрироватьV1 } = await import('./миграция');
+    const р = мигрироватьV1(собратьДемо());
+    expect(р.ок).toBe(true);
+    expect(проверитьВлезает(р.проект!)).toEqual([]);
+  });
+
+  it('файл public/Библиотека/пример-проекта.kitchen — тоже без конфликтов', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { join } = await import('node:path');
+    const { мигрироватьV1 } = await import('./миграция');
+    const р = мигрироватьV1(JSON.parse(readFileSync(join(process.cwd(), 'public/Библиотека/пример-проекта.kitchen'), 'utf8')));
+    expect(р.ок).toBe(true);
+    expect(проверитьВлезает(р.проект!)).toEqual([]);
+  });
+});

@@ -121,6 +121,7 @@ export class Ядро {
 
     зарегистрироватьПревью(() => this.снятьПревью());
     document.addEventListener('visibilitychange', this.видимость);
+    gl.domElement.addEventListener('webglcontextrestored', this.контекстВосстановлен);
     this.hidden = document.hidden;
     void this.запуститьСамопроверку();
   }
@@ -132,6 +133,14 @@ export class Ядро {
     if (this.флагКадра || this.hidden || this.освобождено) return;
     this.флагКадра = true;
     this.о.invalidate();
+  };
+
+  /** Потеря контекста WebGL (сон ноутбука, сбой драйвера): полная пересборка сцены и пересчёт теней */
+  private контекстВосстановлен = () => {
+    this.журнал.push('контекст WebGL восстановлен: пересборка сцены');
+    this.открытий = -1;
+    this.синхронизировать(true);
+    this.тени.запросить();
   };
 
   private видимость = () => {
@@ -450,6 +459,7 @@ export class Ядро {
     this.освобождено = true;
     this.отписка?.();
     document.removeEventListener('visibilitychange', this.видимость);
+    this.о.gl.domElement.removeEventListener('webglcontextrestored', this.контекстВосстановлен);
     window.clearTimeout(this.таймерПроверки);
     for (const эл of this.метки.values()) эл.remove();
     this.метки.clear();

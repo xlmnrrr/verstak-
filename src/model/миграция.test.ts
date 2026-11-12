@@ -36,7 +36,10 @@ describe('миграция v1 → v2 на реальных файлах', () => 
       const р = разобратьФайл(текст);
       expect(р.ошибки).toEqual([]);
       expect(р.ок).toBe(true);
-      expect(р.из).toBe(1);
+      // файл мог быть уже сохранён приложением в v2 (после живого прогона миграции): тогда он читается как v2
+      const схема = (JSON.parse(текст) as { schemaVersion: number }).schemaVersion;
+      expect(р.из).toBe(схема);
+      if (схема !== 1) return;
       expect(р.отчёт!.потери).toEqual([]);
       expect(р.отчёт!.свободных).toEqual([]);
       const исходный = JSON.parse(текст) as Project;
