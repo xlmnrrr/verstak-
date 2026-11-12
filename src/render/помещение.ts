@@ -5,16 +5,59 @@
 import * as THREE from 'three';
 import { высотаДляРендера, стены as рёбра } from '../model/помещение';
 import type { Помещение } from '../model/типы';
+import { МАСШТАБ_ТЕКСТУР, ТЕКСТУРЫ } from '../data/библиотека';
 import { поверхность } from './материалы';
+
+interface ТекстурыПола {
+  карта: THREE.Texture;
+  нормаль: THREE.Texture | null;
+  масштаб: number;
+}
+const ОСНОВА = './Библиотека/текстуры/';
+const кэшПола = new Map<string, Promise<ТекстурыПола | null>>();
+
+function грузить(путь: string, цвет: boolean): Promise<THREE.Texture | null> {
+  return new Promise((ok) => {
+    new THREE.TextureLoader().load(
+      путь,
+      (т) => {
+        т.wrapS = т.wrapT = THREE.RepeatWrapping;
+        т.colorSpace = цвет ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+        т.anisotropy = 8;
+        ok(т);
+      },
+      undefined,
+      () => ok(null),
+    );
+  });
+}
+
+/** Текстура пола: фото-файл, а нет его — процедурная из `запасные/`; normal-карта необязательна */
+function текстурыПола(имя: string): Promise<ТекстурыПола | null> {
+  let п = кэшПола.get(имя);
+  if (!п) {
+    п = (async () => {
+      const карта = (await грузить(`${ОСНОВА}${имя}.webp`, true)) ?? (await грузить(`${ОСНОВА}запасные/${имя}.webp`, true));
+      if (!карта) return null;
+      const нормаль = await грузить(`${ОСНОВА}${имя}.нормаль.webp`, false);
+      return { карта, нормаль, масштаб: МАСШТАБ_ТЕКСТУР[имя] ?? 1 };
+    })();
+    кэшПола.set(имя, п);
+  }
+  return п;
+}
 
 export class ПолПомещения {
   readonly mesh: THREE.Mesh;
   readonly пунктир: THREE.LineSegments;
   private ссылка: Помещение | null = null;
 
+  private запросТекстуры = 0;
+
   constructor(
     родитель: THREE.Object3D,
     private readonly материал: THREE.MeshStandardMaterial,
+    private readonly послеЗагрузки: () => void = () => {},
   ) {
     this.mesh = new THREE.Mesh(new THREE.BufferGeometry(), материал);
     this.mesh.receiveShadow = true;
@@ -59,12 +102,17 @@ export class ПолПомещения {
     const г = new THREE.BufferGeometry();
     г.setAttribute('position', new THREE.Float32BufferAttribute(позиции, 3));
     г.setAttribute('normal', new THREE.Float32BufferAttribute(точки.flatMap(() => [0, 1, 0]), 3));
+    // UV пола — координаты в метрах; повтор текстуры задаётся масштабом материала (map.repeat)
+    г.setAttribute('uv', new THREE.Float32BufferAttribute(точки.flatMap((т) => [т.x, т.y]), 2));
     г.setIndex(индексы);
     this.mesh.geometry.dispose();
     this.mesh.geometry = г;
 
     const пов = поверхность(п.отделка.пол, 'пол');
     this.материал.color.setRGB(пов.цвет[0], пов.цвет[1], пов.цвет[2], THREE.LinearSRGBColorSpace);
+    this.материал.roughness = пов.шер;
+    this.материал.metalness = пов.мет;
+    this.применитьТекстуру(пов.слой ? ТЕКСТУРЫ[пов.слой - 1] : null);
 
     // пунктир по верхней кромке стен
     const неизвестна = п.высота === 'неизвестна';
@@ -79,6 +127,32 @@ export class ПолПомещения {
       this.пунктир.geometry = пг;
       this.пунктир.computeLineDistances();
     }
+  }
+
+  /** Подключает текстуру пола (или снимает её). Файлы грузятся один раз и кэшируются; нет файла — остаётся цвет. */
+  private применитьТекстуру(имя: string | null) {
+    const запрос = ++this.запросТекстуры;
+    const м = this.материал;
+    if (!имя) {
+      if (м.map || м.normalMap) {
+        м.map = null;
+        м.normalMap = null;
+        м.needsUpdate = true;
+      }
+      return;
+    }
+    void текстурыПола(имя).then((т) => {
+      if (запрос !== this.запросТекстуры || !т) return;
+      т.карта.repeat.set(1 / т.масштаб, 1 / т.масштаб);
+      м.map = т.карта;
+      if (т.нормаль) {
+        т.нормаль.repeat.set(1 / т.масштаб, 1 / т.масштаб);
+        м.normalMap = т.нормаль;
+        м.normalScale.set(0.7, 0.7);
+      } else м.normalMap = null;
+      м.needsUpdate = true;
+      this.послеЗагрузки();
+    });
   }
 
   освободить() {

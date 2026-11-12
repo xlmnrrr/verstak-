@@ -111,6 +111,7 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 /* на узком окне подписи кнопок нижней строки прячутся (остаются значки и подсказки), чтобы поместился бейдж «Свободная сборка» */
 @media (max-width: 1560px) { .низ .подпись-кн { display: none; } .плашка.свет input[type='range'] { width: 72px; } .инстр button { padding: 0 10px; } }
 
+h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 640; color: var(--текст-2); }
 /* окно «Проверки»: фильтры по важности и группы замечаний */
 .фильтры-проверок { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
 .чип-проверок { border: 1px solid var(--граница); background: transparent; color: var(--текст-2); min-height: 32px; padding: 0 12px; border-radius: 16px; font: 560 13px/1 var(--ш-текст); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
