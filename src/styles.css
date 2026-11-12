@@ -621,9 +621,15 @@
 }
 .чипы {
   display: flex;
-  flex-wrap: wrap;
+  /* одна строка с прокруткой вбок: иначе два блока фильтров съедают панель и список изделий (с превью) уходит за край */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
   gap: 6px;
-  padding: 4px 16px 12px;
+  padding: 4px 16px 10px;
+}
+.чипы .чип {
+  flex: none;
 }
 .чип {
   min-height: 32px;

@@ -8,7 +8,7 @@ import { strToU8, zipSync } from 'three/examples/jsm/libs/fflate.module.js';
 import { изделиеПоИд } from '../model/каталог';
 import { стены as рёбра, площадьМ2 } from '../model/помещение';
 import { коробаСтен } from '../model/стены';
-import { следУглы } from '../model/проверка';
+import { пометкаПересечений, следУглы } from '../model/проверка';
 import { деталировка, расход, спецификация, type СтрокаДеталировки } from '../model/производство';
 import type { ПроектV2 } from '../model/типы';
 import { примитивыЭкземпляра } from '../render/примитивы';
@@ -52,7 +52,11 @@ export function таблицаДеталировки(п: ПроектV2, пом�
 
 export function таблицаСпецификации(п: ПроектV2, помещение?: string): (string | number)[][] {
   const шапка = ['№', 'Изделие', 'Помещение', 'Ширина, мм', 'Глубина, мм', 'Высота, мм', 'Кол-во'];
-  return [шапка, ...спецификация(п, помещение).map((с, i) => [i + 1, с.название, с.помещение, с.ш, с.г, с.в, с.количество])];
+  const строки: (string | number)[][] = [шапка, ...спецификация(п, помещение).map((с, i) => [i + 1, с.название, с.помещение, с.ш, с.г, с.в, с.количество])];
+  // пометка для цеха: в проекте есть пересечения предметов или выступы
+  const пометка = пометкаПересечений(п);
+  if (пометка) строки.push(['', `ПРИМЕЧАНИЕ: ${пометка}`, '', '', '', '', '']);
+  return строки;
 }
 
 export function таблицаРасхода(п: ПроектV2, помещение?: string): (string | number)[][] {
@@ -238,6 +242,7 @@ const таблицаHtml = (т: (string | number)[][]) =>
 /** Чертёж в стиле PROSTO: рамка и штамп на каждом листе, план с выносками, спецификация, деталировка, расход и кромка */
 export function htmlЧертежа(п: ПроектV2, штамп: ПоляШтампа, помещениеId?: string): string {
   const дата = new Date().toLocaleDateString('ru-RU');
+  const пометка = пометкаПересечений(п);
   const помещения = помещениеId ? п.помещения.filter((x) => x.id === помещениеId) : п.помещения;
   const планы = помещения
     .map((пом) => {
@@ -255,6 +260,8 @@ body { font: 10pt/1.3 'Segoe UI', Arial, sans-serif; color: #142019; margin: 0; 
 .штамп div { padding: 1.2mm 2mm; border-right: 0.2mm solid #142019; border-bottom: 0.2mm solid #142019; }
 .штамп .з { background: #eef1ef; font-size: 7.5pt; color: #36443d; }
 .штамп .назв { grid-column: 1 / -1; font-weight: 700; font-size: 10pt; }
+.штамп .прим { grid-column: 1 / -1; color: #982e1a; font-weight: 700; font-size: 8pt; }
+.пометка { border: 0.4mm solid #982e1a; color: #982e1a; font-weight: 700; padding: 1.5mm 3mm; margin: 0 2mm 3mm; }
 h1 { font-size: 15pt; margin: 0 0 3mm; } h2 { font-size: 11pt; margin: 0 0 3mm; }
 .лист { page-break-after: always; padding: 2mm 2mm 0; }
 .план { display: grid; grid-template-columns: 1fr 70mm; gap: 6mm; align-items: start; }
@@ -263,7 +270,8 @@ th, td { border: 0.2mm solid #8e9a94; padding: 0.8mm 1.6mm; text-align: left; } 
 th { background: #eef1ef; } .легенда { height: fit-content; }
 </style></head><body>
 <div class="рамка"></div>
-<div class="штамп"><div class="назв">${п.название}</div><div class="з">Заказ №</div><div>${штамп.заказ || '—'}</div><div class="з">Дата</div><div>${дата}</div><div class="з">Клиент</div><div>${штамп.клиент || '—'}</div><div class="з">Дизайнер</div><div>${штамп.дизайнер || '—'}</div></div>
+<div class="штамп"><div class="назв">${п.название}</div><div class="з">Заказ №</div><div>${штамп.заказ || '—'}</div><div class="з">Дата</div><div>${дата}</div><div class="з">Клиент</div><div>${штамп.клиент || '—'}</div><div class="з">Дизайнер</div><div>${штамп.дизайнер || '—'}</div>${пометка ? `<div class="прим">${пометка}</div>` : ''}</div>
+${пометка ? `<div class="пометка">ПРИМЕЧАНИЕ: ${пометка}</div>` : ''}
 ${планы}
 <section class="лист"><h1>Спецификация модулей</h1>${таблицаHtml(таблицаСпецификации(п, помещениеId))}</section>
 <section class="лист"><h1>Расход материалов и кромка</h1>${таблицаHtml(таблицаРасхода(п, помещениеId))}</section>

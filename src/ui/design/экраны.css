@@ -44,6 +44,20 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 .вкладка:hover { background: var(--поверх-2); color: var(--текст-1); }
 .вкладка[aria-selected='true'], .вкладка[aria-pressed='true'] { background: var(--поверх-3); color: var(--текст-1); }
 .значок-число { position: absolute; right: 2px; top: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--опасно); color: var(--фон); font: 600 13px/16px var(--ш-текст); text-align: center; font-style: normal; padding: 0 4px; }
+/* мини-превью изделий (снимаются скриптом на светлом фоне, как фото предмета) */
+.превью-изделия { flex: none; border-radius: 8px; background: #d6d0c4; object-fit: cover; display: block; }
+.позиция .превью-изделия { width: 44px; height: 44px; }
+.подсказка-изделия { position: fixed; z-index: 90; width: 208px; padding: 10px; border-radius: 12px; background: var(--поверх-2); border: 1px solid var(--линия); box-shadow: var(--тень-2, 0 8px 24px #0006); display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+.подсказка-изделия .превью-изделия { width: 176px; height: 176px; border-radius: 10px; margin-bottom: 4px; }
+.подсказка-изделия b { font-size: var(--т-14, 14px); font-weight: 640; color: var(--текст-1); }
+.подсказка-изделия .размер { font-size: var(--т-13); color: var(--текст-2); font-variant-numeric: tabular-nums; }
+.подсказка-изделия .заметка { font-size: 12px; line-height: 1.35; color: var(--текст-3); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.значок-число.тихий { background: var(--поверх-3, var(--граница)); color: var(--текст-1); }
+/* «Свободная сборка»: плашка в нижней строке (латунь, чтобы не забыть) и нейтральная плашка проверок */
+.плашка.свободная-сборка { background: var(--латунь); color: var(--на-латуни); font-weight: 600; }
+.плашка.свободная-сборка svg { color: var(--на-латуни); }
+.плашка.тихая { color: var(--текст-2); }
+.кн-и.свободная[aria-pressed='true'] { background: var(--латунь); color: var(--на-латуни); }
 .шапка-кнопки { position: absolute; right: 8px; top: 12px; display: flex; gap: 2px; }
 .язычок { position: absolute; right: 0; top: 16px; z-index: 3; border-radius: 10px 0 0 10px; border-right: 0; }
 .позиция-ряд { display: flex; align-items: center; }
@@ -82,3 +96,5 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 .сегменты.части { grid-template-columns: repeat(3, 1fr); grid-auto-flow: row; }
 .низ .плашка, .низ .кн { white-space: nowrap; }
 @media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } }
+/* на узком окне подписи кнопок нижней строки прячутся (остаются значки и подсказки), чтобы поместился бейдж «Свободная сборка» */
+@media (max-width: 1560px) { .низ .подпись-кн { display: none; } .плашка.свет input[type='range'] { width: 72px; } .инстр button { padding: 0 10px; } }

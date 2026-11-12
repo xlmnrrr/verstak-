@@ -116,6 +116,7 @@ const НастройкиZ = z.looseObject({
   толщина_плиты: z.union([z.literal(16), z.literal(18)]).optional(),
   качество: z.enum(['авто', 'высокое', 'среднее', 'слабый ноутбук']).optional(),
   режим_обзора: z.enum(['сверху', 'прогулка']).optional(),
+  свободная_сборка: z.boolean().optional(),
 });
 
 export const СхемаV2Z = z.looseObject({
