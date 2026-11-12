@@ -113,6 +113,12 @@ export default function App() {
         case 'KeyV':
           с.установитьОбзор(с.обзор === 'сверху' ? 'прогулка' : 'сверху');
           break;
+        case 'KeyM': {
+          // рулетка: включить или выключить
+          const ui = useUI.getState();
+          ui.установитьРулетку(!ui.рулетка);
+          break;
+        }
         case 'KeyO':
           // открыть или закрыть выбранное (в «Прогулке» то, на что указываешь, открывает ЛКМ или F)
           с.переключитьОткрытие();
@@ -134,12 +140,21 @@ export default function App() {
           window.dispatchEvent(new Event('кухня:показать-всё'));
           break;
         case 'Delete':
-        case 'Backspace':
+        case 'Backspace': {
           e.preventDefault();
-          с.удалитьВыбранное();
+          // при включённой рулетке Backspace убирает последний замер, а не удаляет выбранное
+          const р = (window as unknown as { __кухня?: { ядро?: { рулетка: { убратьПоследний: () => void } } } }).__кухня?.ядро?.рулетка;
+          if (useUI.getState().рулетка && р) р.убратьПоследний();
+          else с.удалитьВыбранное();
           break;
+        }
         case 'Escape':
-          if (useUI.getState().планОткрыт) useUI.getState().переключитьПлан(false);
+          if (useUI.getState().рулетка) {
+            // Esc: снять первую грань, а если её нет — выйти из рулетки
+            const р = (window as unknown as { __кухня?: { ядро?: { рулетка: { отмена: () => boolean } } } }).__кухня?.ядро?.рулетка;
+            if (!р?.отмена()) useUI.getState().установитьРулетку(false);
+          } else if (с.предложениеНиши) с.отклонитьНишу();
+          else if (useUI.getState().планОткрыт) useUI.getState().переключитьПлан(false);
           else if (с.каталогОткрыт) с.переключитьКаталог(false);
           else if (с.комнатаОткрыта) с.переключитьКомнату(false);
           else с.выбрать([]);

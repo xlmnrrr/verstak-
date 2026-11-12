@@ -32,6 +32,9 @@ export interface ОпорнаяТочка {
 
 const ЦВЕТА: Record<ОсьСтрелки, string> = { X: '#e0563f', Y: '#5fb87a', Z: '#4f7fd0' };
 export const ДЛИНА_СТРЕЛКИ_ПИКС = 90;
+/** Толщина стрелки относительно основной формы: заметнее на светлом и тёмном фоне; под курсором — толще */
+const ТОЛЩИНА = 1.7;
+const ТОЛЩИНА_ПОД_КУРСОРОМ = 2.6;
 export const РАДИУС_ПОПАДАНИЯ_ПИКС = 10;
 
 function геометрияСтрелки(): THREE.BufferGeometry {
@@ -56,6 +59,8 @@ export class Стрелки {
   private ёмкость = 48;
   private режим: РежимСтрелок = 'двигать';
   private точки: ОпорнаяТочка[] = [];
+  private подКурсором: { id: string; ось: ОсьСтрелки } | null = null;
+  private _светлый = new THREE.Color('#ffffff');
 
   constructor(родитель: THREE.Object3D) {
     const м = new THREE.MeshBasicMaterial({ color: 0xffffff, depthTest: false, depthWrite: false, transparent: true, toneMapped: false, fog: false });
@@ -73,6 +78,14 @@ export class Стрелки {
   задать(режим: РежимСтрелок, точки: ОпорнаяТочка[]) {
     this.режим = режим;
     this.точки = точки;
+  }
+
+  /** Стрелка под курсором (или тянется): толще и светлее. true — наведение изменилось, нужен кадр */
+  навести(с: { id: string; ось: ОсьСтрелки } | null): boolean {
+    const было = this.подКурсором;
+    if (было?.id === с?.id && было?.ось === с?.ось) return false;
+    this.подКурсором = с ? { id: с.id, ось: с.ось } : null;
+    return true;
   }
 
   get стрелки(): readonly Стрелка[] {
@@ -126,10 +139,13 @@ export class Стрелки {
       this._к.setFromUnitVectors(this._в, this._d);
       const L = Math.hypot(с.кончик[0] - с.начало[0], с.кончик[1] - с.начало[1], с.кончик[2] - с.начало[2]);
       this._п.set(с.начало[0], с.начало[1], с.начало[2]);
-      this._м2.set(L, L, L);
+      const под = this.подКурсором?.id === с.id && this.подКурсором.ось === с.ось;
+      const k = под ? ТОЛЩИНА_ПОД_КУРСОРОМ : ТОЛЩИНА;
+      this._м2.set(L * k, L, L * k);
       this._м.compose(this._п, this._к, this._м2);
       this.mesh.setMatrixAt(i, this._м);
       this._с.set(ЦВЕТА[с.ось]);
+      if (под) this._с.lerp(this._светлый, 0.4);
       this.mesh.setColorAt(i, this._с);
     });
     this.mesh.count = список.length;
