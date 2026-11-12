@@ -21,6 +21,9 @@ export interface ОпцииШейдера {
 /** Массив текстур материалов и масштаб (метров на повтор) каждого слоя: общий для всех групп плит */
 export const МАССИВ_ТЕКСТУР = { value: null as THREE.Texture | null };
 export const МАСШТАБЫ_СЛОЁВ = { value: new Float32Array(32).fill(1) };
+/** Массив normal-карт (OpenGL, RG — наклон) и сила рельефа; слой без карты плоский */
+export const МАССИВ_НОРМАЛЕЙ = { value: null as THREE.Texture | null };
+export const СИЛА_РЕЛЬЕФА = { value: 0.7 };
 
 /** Общий uniform положения камеры для стен */
 export const ПОЛОЖЕНИЕ_КАМЕРЫ = { value: new THREE.Vector3() };
@@ -79,6 +82,8 @@ const ФРАГМЕНТ_ОБЩИЙ = /* glsl */ `
 varying vec4 vSurf;
 #ifdef DETAIL
 uniform highp sampler2DArray uTex;
+uniform highp sampler2DArray uNor;
+uniform float uNorK;
 uniform float uTexScale[32];
 #endif
 #ifdef DETAIL
@@ -95,20 +100,30 @@ varying vec3 vAz;
 const ТЕКСТУРА = /* glsl */ `
 float texR = -1.0;
 #ifdef DETAIL
+vec2 texN = vec2( 0.0 );
+vec3 texT = vec3( 0.0 );
+vec3 texB = vec3( 0.0 );
 {
   int layer = int( vSurf.z + 0.5 ) >> 7;
   if ( layer > 0 ) {
     vec3 an = abs( vNl );
     vec2 uv;
     vec2 hs;
-    if ( an.x > 0.5 ) { uv = vec2( vLocal.z, vLocal.y ); hs = vec2( vHalf.z, vHalf.y ); }
-    else if ( an.y > 0.5 ) { uv = vec2( vLocal.x, vLocal.z ); hs = vec2( vHalf.x, vHalf.z ); }
-    else { uv = vec2( vLocal.x, vLocal.y ); hs = vec2( vHalf.x, vHalf.y ); }
-    if ( hs.y > hs.x ) uv = uv.yx;
+    // локальные оси, вдоль которых идут u и v текстуры (для наклона normal-карты)
+    vec3 au;
+    vec3 av;
+    if ( an.x > 0.5 ) { uv = vec2( vLocal.z, vLocal.y ); hs = vec2( vHalf.z, vHalf.y ); au = vec3( 0.0, 0.0, 1.0 ); av = vec3( 0.0, 1.0, 0.0 ); }
+    else if ( an.y > 0.5 ) { uv = vec2( vLocal.x, vLocal.z ); hs = vec2( vHalf.x, vHalf.z ); au = vec3( 1.0, 0.0, 0.0 ); av = vec3( 0.0, 0.0, 1.0 ); }
+    else { uv = vec2( vLocal.x, vLocal.y ); hs = vec2( vHalf.x, vHalf.y ); au = vec3( 1.0, 0.0, 0.0 ); av = vec3( 0.0, 1.0, 0.0 ); }
+    if ( hs.y > hs.x ) { uv = uv.yx; vec3 tmp = au; au = av; av = tmp; }
     uv = uv / uTexScale[ layer ] + 0.5;
     vec4 t = texture( uTex, vec3( uv, float( layer - 1 ) ) );
     diffuseColor.rgb *= t.rgb;
     texR = t.a;
+    texN = texture( uNor, vec3( uv, float( layer - 1 ) ) ).xy * 2.0 - 1.0;
+    // строка 0 картинки — это v = 0, зелёный канал OpenGL смотрит вверх по картинке, то есть против v
+    texT = vAx * au.x + vAy * au.y + vAz * au.z;
+    texB = -( vAx * av.x + vAy * av.y + vAz * av.z );
   }
 }
 #endif
@@ -144,6 +159,10 @@ const ЦВЕТ_ТОРЦА = /* glsl */ `
 
 /** Шейдерная фаска: у ребра грани нормаль плавно наклоняется к соседней грани, полоса не уже пикселя */
 const ФАСКА_НОРМАЛИ = /* glsl */ `
+#ifdef DETAIL
+  // рельеф из normal-карты: наклон по осям текстуры в видовом пространстве
+  if ( texN.x != 0.0 || texN.y != 0.0 ) normal = normalize( normal + ( texT * texN.x + texB * texN.y ) * uNorK );
+#endif
 #if defined( DETAIL ) && defined( FILLET )
 {
   vec3 mask = vec3( 1.0 ) - step( 0.5, abs( vNl ) );
@@ -183,6 +202,8 @@ export function патчЦвета(шейдер: { vertexShader: string; fragmen
   шейдер.uniforms.uViewPos = ПОЛОЖЕНИЕ_КАМЕРЫ;
   шейдер.uniforms.uTex = МАССИВ_ТЕКСТУР;
   шейдер.uniforms.uTexScale = МАСШТАБЫ_СЛОЁВ;
+  шейдер.uniforms.uNor = МАССИВ_НОРМАЛЕЙ;
+  шейдер.uniforms.uNorK = СИЛА_РЕЛЬЕФА;
   шейдер.vertexShader = шейдер.vertexShader
     .replace('#include <common>', `#include <common>\n${ВЕРШИНА_ОБЩАЯ}`)
     .replace('#include <begin_vertex>', НАЧАЛО_ВЕРШИНЫ);

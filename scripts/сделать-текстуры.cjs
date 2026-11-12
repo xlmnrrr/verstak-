@@ -113,7 +113,7 @@ const CHROME = 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
     return фаб;
   });
   await браузер.close();
-  const куда = path.join('public', 'Библиотека', 'текстуры');
+  const куда = path.join('public', 'Библиотека', 'текстуры', 'запасные'); fs.mkdirSync(куда, { recursive: true });
   fs.mkdirSync(куда, { recursive: true });
   let всего = 0;
   for (const [имя, url] of результат) {

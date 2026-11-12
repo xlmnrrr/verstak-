@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { ФАСАДЫ, СТОЛЕШНИЦЫ, ОБОИ, ПОЛЫ } from '../data/materials';
 import { ПОИД, слойТекстуры, ТЕКСТУРЫ, МАСШТАБ_ТЕКСТУР } from '../data/библиотека';
-import { МАССИВ_ТЕКСТУР, МАСШТАБЫ_СЛОЁВ, ключПрограммы, определения, патчГлубины, патчЦвета, type ОпцииШейдера } from './шейдер-плиты';
+import { МАССИВ_НОРМАЛЕЙ, МАССИВ_ТЕКСТУР, МАСШТАБЫ_СЛОЁВ, ключПрограммы, определения, патчГлубины, патчЦвета, type ОпцииШейдера } from './шейдер-плиты';
 
 export type КлассМатериала = 'плита' | 'плита-фаска' | 'прим' | 'стена' | 'стекло';
 
@@ -88,49 +88,100 @@ export function поверхность(значение: string | undefined, к�
 
 export const умолчаниеПоверхности = (ключ: string): Поверхность => поверхность(undefined, ключ);
 
-const РАЗМЕР_ТЕКСТУРЫ = 512;
+const РАЗМЕР_ТЕКСТУРЫ = 1024;
+const РАЗМЕР_НОРМАЛИ = 512;
 const СЛОЁВ = 16;
 let загружено: Promise<void> | null = null;
 
 /** Пустая текстура-заглушка, пока файлы не загрузились (sampler2DArray должен быть всегда привязан) */
-function заглушка() {
+function заглушка(плоская = false) {
   const т = new THREE.DataArrayTexture(new Uint8Array(4 * 4 * 4).fill(255), 1, 1, 4);
+  if (плоская) {
+    const д = т.image.data as Uint8Array;
+    for (let i = 0; i < д.length; i += 4) {
+      д[i] = 128;
+      д[i + 1] = 128;
+      д[i + 2] = 255;
+      д[i + 3] = 255;
+    }
+  }
   т.needsUpdate = true;
   return т;
 }
 МАССИВ_ТЕКСТУР.value = заглушка();
+МАССИВ_НОРМАЛЕЙ.value = заглушка(true);
 ТЕКСТУРЫ.forEach((имя, i) => (МАСШТАБЫ_СЛОЁВ.value[i + 1] = МАСШТАБ_ТЕКСТУР[имя] ?? 0.6));
 
-/** Грузит WebP-текстуры из папки приложения в один массив (работает офлайн); вызывается один раз */
+/** Нормаль «вверх» (плоская поверхность) для слоя без normal-карты */
+function залитьПлоскую(данные: Uint8Array, слой: number, N: number) {
+  const н = слой * N * N * 4;
+  for (let i = 0; i < N * N; i++) {
+    данные[н + i * 4] = 128;
+    данные[н + i * 4 + 1] = 128;
+    данные[н + i * 4 + 2] = 255;
+    данные[н + i * 4 + 3] = 255;
+  }
+}
+
+async function картинка(путь: string): Promise<ImageBitmap | null> {
+  try {
+    const ответ = await fetch(путь);
+    if (!ответ.ok) return null;
+    return await createImageBitmap(await ответ.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Грузит WebP-текстуры из папки приложения в массивы (работает офлайн); вызывается один раз.
+ * Фотосканы CC0: `<имя>.webp` (цвет, альфа = 0,4 + 0,6 × шероховатость) и `<имя>.нормаль.webp`.
+ * Нет файла — берётся процедурная из `запасные/` (альфа = шероховатость как есть), нет normal-карты — плоская поверхность.
+ */
 export function загрузитьТекстуры(основа = './Библиотека/текстуры/'): Promise<void> {
   if (загружено) return загружено;
   загружено = (async () => {
     const данные = new Uint8Array(РАЗМЕР_ТЕКСТУРЫ * РАЗМЕР_ТЕКСТУРЫ * 4 * СЛОЁВ);
+    const нормали = new Uint8Array(РАЗМЕР_НОРМАЛИ * РАЗМЕР_НОРМАЛИ * 4 * СЛОЁВ);
+    for (let i = 0; i < СЛОЁВ; i++) залитьПлоскую(нормали, i, РАЗМЕР_НОРМАЛИ);
     const холст = document.createElement('canvas');
-    холст.width = холст.height = РАЗМЕР_ТЕКСТУРЫ;
     const g = холст.getContext('2d', { willReadFrequently: true })!;
+    const прочитать = (к: ImageBitmap, N: number) => {
+      холст.width = холст.height = N;
+      g.clearRect(0, 0, N, N);
+      g.drawImage(к, 0, 0, N, N);
+      return g.getImageData(0, 0, N, N).data;
+    };
     for (let i = 0; i < ТЕКСТУРЫ.length; i++) {
-      try {
-        const ответ = await fetch(`${основа}${ТЕКСТУРЫ[i]}.webp`);
-        const картинка = await createImageBitmap(await ответ.blob(), { premultiplyAlpha: 'none', colorSpaceConversion: 'none' });
-        g.clearRect(0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ);
-        g.drawImage(картинка, 0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ);
-        // canvas хранит премультиплицированную альфу; шероховатость 0.1…0.95 нас устраивает без обратного пересчёта цвета
-        данные.set(g.getImageData(0, 0, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ).data, i * РАЗМЕР_ТЕКСТУРЫ * РАЗМЕР_ТЕКСТУРЫ * 4);
-      } catch {
-        /* нет файла — слой остаётся пустым (цвет материала виден без узора) */
+      const имя = ТЕКСТУРЫ[i];
+      const фото = await картинка(`${основа}${имя}.webp`);
+      const к = фото ?? (await картинка(`${основа}запасные/${имя}.webp`));
+      if (к) {
+        const д = прочитать(к, РАЗМЕР_ТЕКСТУРЫ);
+        if (фото) {
+          // вернуть шероховатость: в файле альфа = 0,4 + 0,6 × r
+          for (let p = 3; p < д.length; p += 4) д[p] = Math.max(0, Math.min(255, Math.round(((д[p] / 255 - 0.4) / 0.6) * 255)));
+        }
+        данные.set(д, i * РАЗМЕР_ТЕКСТУРЫ * РАЗМЕР_ТЕКСТУРЫ * 4);
       }
+      // слой без файла остаётся пустым (цвет материала виден без узора)
+      const н = фото ? await картинка(`${основа}${имя}.нормаль.webp`) : null;
+      if (н) нормали.set(прочитать(н, РАЗМЕР_НОРМАЛИ), i * РАЗМЕР_НОРМАЛИ * РАЗМЕР_НОРМАЛИ * 4);
     }
-    const т = new THREE.DataArrayTexture(данные, РАЗМЕР_ТЕКСТУРЫ, РАЗМЕР_ТЕКСТУРЫ, СЛОЁВ);
-    т.format = THREE.RGBAFormat;
-    т.colorSpace = THREE.SRGBColorSpace;
-    т.wrapS = т.wrapT = THREE.RepeatWrapping;
-    т.minFilter = THREE.LinearMipmapLinearFilter;
-    т.magFilter = THREE.LinearFilter;
-    т.generateMipmaps = true;
-    т.anisotropy = 4;
-    т.needsUpdate = true;
-    МАССИВ_ТЕКСТУР.value = т;
+    const сделать = (буфер: Uint8Array, N: number, цвет: boolean) => {
+      const т = new THREE.DataArrayTexture(буфер, N, N, СЛОЁВ);
+      т.format = THREE.RGBAFormat;
+      т.colorSpace = цвет ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+      т.wrapS = т.wrapT = THREE.RepeatWrapping;
+      т.minFilter = THREE.LinearMipmapLinearFilter;
+      т.magFilter = THREE.LinearFilter;
+      т.generateMipmaps = true;
+      т.anisotropy = 4;
+      т.needsUpdate = true;
+      return т;
+    };
+    МАССИВ_ТЕКСТУР.value = сделать(данные, РАЗМЕР_ТЕКСТУРЫ, true);
+    МАССИВ_НОРМАЛЕЙ.value = сделать(нормали, РАЗМЕР_НОРМАЛИ, false);
   })();
   return загружено;
 }
