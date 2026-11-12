@@ -356,6 +356,58 @@ ipcMain.handle('система:автозапуск', async (_e, вкл) => {
   return { ок: true };
 });
 
+/** Выгрузка: сохранить файл (base64) через диалог «Сохранить как» */
+/** Для проверок: VERSTAK_EXPORT_DIR — писать выгрузку в эту папку без диалога */
+const папкаВыгрузкиТест = () => process.env.VERSTAK_EXPORT_DIR || '';
+
+ipcMain.handle('экспорт:сохранить', async (_e, имя, base64, расширение, названиеФильтра) => {
+  if (папкаВыгрузкиТест()) {
+    fs.mkdirSync(папкаВыгрузкиТест(), { recursive: true });
+    const файл = path.join(папкаВыгрузкиТест(), `${очиститьИмя(имя)}.${расширение}`);
+    fs.writeFileSync(файл, Buffer.from(base64, 'base64'));
+    return { ок: true, путь: файл };
+  }
+  const р = await dialog.showSaveDialog({
+    title: 'Сохранить',
+    defaultPath: `${очиститьИмя(имя)}.${расширение}`,
+    filters: [{ name: названиеФильтра || расширение.toUpperCase(), extensions: [расширение] }],
+  });
+  if (р.canceled || !р.filePath) return { ок: false, ошибка: 'отменено' };
+  try {
+    fs.writeFileSync(р.filePath, Buffer.from(base64, 'base64'));
+    return { ок: true, путь: р.filePath };
+  } catch (e) {
+    return { ок: false, ошибка: e.message };
+  }
+});
+
+/** PDF: HTML чертежа печатается скрытым окном (A4 альбомная, фон и рамка сохраняются) и сохраняется через диалог */
+ipcMain.handle('экспорт:pdf', async (_e, html, имя) => {
+  const врем = path.join(app.getPath('temp'), `верстак-чертёж-${Date.now()}.html`);
+  fs.writeFileSync(врем, html, 'utf8');
+  const окно = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
+  try {
+    await окно.loadFile(врем);
+    const pdf = await окно.webContents.printToPDF({ pageSize: 'A4', landscape: true, printBackground: true, preferCSSPageSize: true });
+    if (папкаВыгрузкиТест()) {
+      fs.mkdirSync(папкаВыгрузкиТест(), { recursive: true });
+      const файл = path.join(папкаВыгрузкиТест(), `${очиститьИмя(имя)}.pdf`);
+      fs.writeFileSync(файл, pdf);
+      fs.writeFileSync(файл.replace(/\.pdf$/, '.html'), html, 'utf8');
+      return { ок: true, путь: файл };
+    }
+    const р = await dialog.showSaveDialog({ title: 'Сохранить чертёж', defaultPath: `${очиститьИмя(имя)}.pdf`, filters: [{ name: 'PDF', extensions: ['pdf'] }] });
+    if (р.canceled || !р.filePath) return { ок: false, ошибка: 'отменено' };
+    fs.writeFileSync(р.filePath, pdf);
+    return { ок: true, путь: р.filePath };
+  } catch (e) {
+    return { ок: false, ошибка: e.message };
+  } finally {
+    окно.destroy();
+    try { fs.unlinkSync(врем); } catch { /* не страшно */ }
+  }
+});
+
 ipcMain.handle('пути:проекты', async () => папкаПроектов());
 
 app.on('second-instance', () => {

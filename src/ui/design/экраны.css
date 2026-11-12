@@ -78,7 +78,7 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 .панель-клиента { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); display: flex; gap: 16px; align-items: center; padding: 10px 16px; background: var(--поверх-1); border: 1px solid var(--линия); border-radius: 16px; box-shadow: var(--тень-3); z-index: 30; flex-wrap: wrap; justify-content: center; max-width: 96vw; }
 .клиент-ряд { display: flex; gap: 6px; align-items: center; font-size: var(--т-13); color: var(--текст-2); }
 .плашка.свет { gap: 6px; }
-.плашка.свет input[type='range'] { width: 110px; accent-color: var(--латунь); }
+.плашка.свет input[type='range'] { width: 110px; height: 32px; margin: 0; accent-color: var(--латунь); }
 .сегменты.части { grid-template-columns: repeat(3, 1fr); grid-auto-flow: row; }
 .низ .плашка, .низ .кн { white-space: nowrap; }
 @media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } }
