@@ -419,6 +419,16 @@
   box-shadow: var(--тень-1);
 }
 
+.подсказка-мелко {
+  margin: 8px 0 0;
+  color: var(--текст-2, var(--приглушён, inherit));
+  font: 400 var(--т-13) / 1.4 var(--ш-размер);
+}
+.метка-открывание {
+  max-width: 340px;
+  white-space: normal;
+}
+
 /* островок действий над выделенным */
 .островок {
   position: absolute;

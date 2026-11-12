@@ -6,6 +6,7 @@
  */
 import * as THREE from 'three';
 import { изделиеПоИд } from '../model/каталог';
+import { группаДляКлика, движенияИзделия } from '../model/открывание';
 import { высотаДляРендера } from '../model/помещение';
 import { ограничитьГабариты } from '../model/проект';
 import { выступЗаКонтур, следУглы } from '../model/проверка';
@@ -14,6 +15,7 @@ import { useКухня } from '../store';
 import { изменитьОбъект } from '../store/команды';
 import type { КамераОбзора } from './камера';
 import { выбратьЦель } from './выбор';
+import { коробкаГрупп, type Коробка } from './выделение';
 import {
   пересечениеСПлоскостью,
   позицияПоОси,
@@ -35,7 +37,18 @@ export interface КонтекстЖестов {
   стрелки: Стрелки;
   камераОбзора: КамераОбзора;
   попроситьКадр: () => void;
+  /** подсветить часть под курсором в «Прогулке» (дверца, ящик, дверь комнаты); null — убрать */
+  подсветитьЧасть?: (к: Коробка | null) => void;
+  /** дверь комнаты открыта или закрыта: ядру нужны тени и кадр */
+  приОткрытииДвери?: () => void;
 }
+
+/** Радиус руки в «Прогулке», метры */
+export const РУКА_М = 1.5;
+
+type ЦельОткрытия =
+  | { вид: 'экз'; id: string; группа: string; t: number }
+  | { вид: 'дверь'; ключ: string; t: number };
 
 type Цель =
   | { вид: 'стрелка'; стрелка: Стрелка }
@@ -49,6 +62,10 @@ interface Нажатие {
   цель: Цель;
   луч0: Луч;
   clientY0: number;
+  /** «Прогулка»: под курсором дверца, ящик, створка или дверь комнаты в пределах руки */
+  открыть?: ЦельОткрытия;
+  /** под курсором такая цель, но дальше руки */
+  далеко?: boolean;
 }
 
 interface ЖестОсь {
@@ -85,6 +102,7 @@ export class Жесты {
   private запланирован = 0;
   private подключены = false;
   private наведение = 0;
+  private подсвечено = false;
   private _в = new THREE.Vector3();
   private _р = new THREE.Raycaster();
   private _н = new THREE.Vector2();
@@ -119,6 +137,72 @@ export class Жесты {
     return { x: ((this._в.x + 1) / 2) * r.width, y: ((1 - this._в.y) / 2) * r.height };
   };
 
+  /** Подвижная часть на луче: дверца, ящик, створка (клик по передней купе двигает соседнюю) или дверь комнаты */
+  подвижное(луч: Луч): ЦельОткрытия | null {
+    const { цели, ид } = this.я.сборщик.получитьЦели();
+    const р = выбратьЦель(луч, цели);
+    let итог: ЦельОткрытия | null = null;
+    let tМебели = Infinity;
+    if (р) {
+      tМебели = р.t;
+      const г = цели[р.индекс].группы?.[р.деталь];
+      if (г) {
+        const id = ид[р.индекс];
+        const экз = useКухня.getState().проект2.объекты.find((о) => о.id === id);
+        const изд = экз ? изделиеПоИд(экз.изделие) : undefined;
+        const цель = экз && изд ? группаДляКлика(движенияИзделия(изд, экз), г) : null;
+        if (цель) итог = { вид: 'экз', id, группа: цель, t: р.t };
+      }
+    }
+    const д = this.я.сборщик.получитьЦелиДверей();
+    const р2 = выбратьЦель(луч, д.цели);
+    if (р2 && р2.t < tМебели) итог = { вид: 'дверь', ключ: д.ключи[р2.индекс], t: р2.t };
+    return итог;
+  }
+
+  /** Коробка цели открывания для подсветки */
+  private коробкаЦели(ц: ЦельОткрытия): Коробка | null {
+    if (ц.вид === 'экз') {
+      const з = this.я.сборщик.запись(ц.id);
+      return з ? коробкаГрупп(з.цель, new Set([ц.группа])) : null;
+    }
+    const д = this.я.сборщик.получитьЦелиДверей();
+    const i = д.ключи.indexOf(ц.ключ);
+    if (i < 0) return null;
+    const т = д.цели[i];
+    return { позиция: т.позиция, cos: т.cos, sin: т.sin, центр: [0, т.полу[1], 0], полу: т.полу };
+  }
+
+  /** Открыть или закрыть цель; для двери комнаты сообщить ядру */
+  открыть(ц: ЦельОткрытия) {
+    if (ц.вид === 'экз') {
+      useКухня.getState().переключитьГруппуОткрытия(ц.id, ц.группа);
+    } else if (this.я.сборщик.переключитьДверь(ц.ключ)) {
+      this.я.приОткрытииДвери?.();
+    }
+    this.я.попроситьКадр();
+  }
+
+  /** Клавиша F в «Прогулке»: открыть то, на что смотрит центр экрана */
+  private клавишаОткрыть = (e: KeyboardEvent) => {
+    if (e.code !== 'KeyF' || e.ctrlKey || e.metaKey || e.altKey) return;
+    const цель = e.target as HTMLElement | null;
+    if (цель && ['INPUT', 'TEXTAREA', 'SELECT'].includes(цель.tagName)) return;
+    const с = useКухня.getState();
+    if (с.экран !== 'редактор' || с.обзор !== 'прогулка') return;
+    const { w, h } = this.пикс({ clientX: 0, clientY: 0 } as MouseEvent);
+    const п = this.подвижное(this.луч(w / 2, h / 2, w, h));
+    if (!п) {
+      с.сообщить('Наведите центр экрана на дверцу, ящик или дверь комнаты');
+      return;
+    }
+    if (п.t > РУКА_М) {
+      с.сообщить(`Далеко: подойдите ближе (дотянуться можно на ${РУКА_М.toString().replace('.', ',')} м, до цели ${п.t.toFixed(1).replace('.', ',')} м)`);
+      return;
+    }
+    this.открыть(п);
+  };
+
   private найтиЦель(x: number, y: number, w: number, h: number, луч: Луч): Цель {
     this.я.camera.updateMatrixWorld();
     const с = this.я.стрелки.найти(x, y, this.проекция);
@@ -137,13 +221,20 @@ export class Жесты {
     const луч = this.луч(x, y, w, h);
     const цель = this.найтиЦель(x, y, w, h, луч);
     const с = useКухня.getState();
+    let открыть: ЦельОткрытия | undefined;
+    let далеко = false;
+    if (с.обзор === 'прогулка' && цель.вид !== 'стрелка') {
+      const п = this.подвижное(луч);
+      if (п && п.t <= РУКА_М) открыть = п;
+      else if (п) далеко = true;
+    }
     if (цель.вид === 'стрелка') {
       if (!с.выбрано.includes(цель.стрелка.id)) с.выбрать([цель.стрелка.id]);
     } else if (цель.вид === 'объект') {
       if (e.shiftKey) с.добавитьКлик(цель.id);
       else с.выбрать([цель.id]);
     }
-    this.нажатие = { x0: x, y0: y, pid: e.pointerId, цель, луч0: луч, clientY0: e.clientY };
+    this.нажатие = { x0: x, y0: y, pid: e.pointerId, цель, луч0: луч, clientY0: e.clientY, открыть, далеко };
     this.жест = null;
     this.выполнено = false;
     try {
@@ -192,6 +283,8 @@ export class Жесты {
     }
     const с = useКухня.getState();
     if (был) с.завершитьИзменение();
+    else if (н.открыть) this.открыть(н.открыть);
+    else if (н.далеко) с.сообщить(`Далеко: подойдите ближе, дотянуться можно на ${РУКА_М.toString().replace('.', ',')} м`);
     else if (н.цель.вид === 'пусто' && !e.shiftKey) с.выбрать([]);
     this.я.el.style.cursor = '';
     this.я.попроситьКадр();
@@ -223,7 +316,21 @@ export class Жесты {
     this.наведение = requestAnimationFrame(() => {
       this.наведение = 0;
       const { x, y, w, h } = this.пикс(e);
-      const ц = this.найтиЦель(x, y, w, h, this.луч(x, y, w, h));
+      const луч = this.луч(x, y, w, h);
+      const ц = this.найтиЦель(x, y, w, h, луч);
+      // «Прогулка»: подсветка дверцы, ящика или двери комнаты в пределах руки
+      const ходьба = useКухня.getState().обзор === 'прогулка';
+      const п = ходьба && ц.вид !== 'стрелка' ? this.подвижное(луч) : null;
+      if (п && п.t <= РУКА_М) {
+        this.я.подсветитьЧасть?.(this.коробкаЦели(п));
+        this.я.el.style.cursor = 'pointer';
+        this.подсвечено = true;
+        return;
+      }
+      if (this.подсвечено) {
+        this.подсвечено = false;
+        this.я.подсветитьЧасть?.(null);
+      }
       this.я.el.style.cursor = ц.вид === 'пусто' ? '' : 'grab';
     });
   }
@@ -441,6 +548,7 @@ export class Жесты {
     el.addEventListener('pointerup', this.вверх);
     el.addEventListener('pointercancel', this.вверх);
     window.addEventListener('keydown', this.кнопка, true);
+    window.addEventListener('keydown', this.клавишаОткрыть);
   }
 
   отключить() {
@@ -452,6 +560,7 @@ export class Жесты {
     el.removeEventListener('pointerup', this.вверх);
     el.removeEventListener('pointercancel', this.вверх);
     window.removeEventListener('keydown', this.кнопка, true);
+    window.removeEventListener('keydown', this.клавишаОткрыть);
     if (this.запланирован) cancelAnimationFrame(this.запланирован);
     if (this.наведение) cancelAnimationFrame(this.наведение);
   }
