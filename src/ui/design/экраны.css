@@ -107,9 +107,9 @@ h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--тек
 .плашка.свет input[type='range'] { width: 110px; height: 32px; margin: 0; accent-color: var(--латунь); }
 .сегменты.части { grid-template-columns: repeat(3, 1fr); grid-auto-flow: row; }
 .низ .плашка, .низ .кн { white-space: nowrap; }
-@media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } }
-/* на узком окне подписи кнопок нижней строки прячутся (остаются значки и подсказки), чтобы поместился бейдж «Свободная сборка» */
-@media (max-width: 1560px) { .низ .подпись-кн { display: none; } .плашка.свет input[type='range'] { width: 72px; } .инстр button { padding: 0 10px; } }
+@media (max-width: 1560px) { .инстр button .кл { display: none; } .низ .кн { padding: 0 10px; } .плашка.свет input[type='range'] { width: 72px; } .инстр button { padding: 0 10px; } }
+/* подписи кнопок нижней строки короткие («Двиг.», «Крут.», «Клиенту») и видны до 1200 px; на совсем узком окне остаются значки и подсказки */
+@media (max-width: 1200px) { .низ .подпись-кн { display: none; } }
 
 h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 640; color: var(--текст-2); }
 /* окно «Проверки»: фильтры по важности и группы замечаний */
@@ -128,4 +128,7 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .замечание.совет .позиция svg { color: var(--синька); }
 .замечание .позиция { flex: 1; min-width: 0; }
 .замечание .размер { white-space: normal; overflow-wrap: anywhere; }
+.замечание { flex-wrap: wrap; }
+.исправления { flex: none; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.исправления .исправить { white-space: nowrap; border-color: var(--латунь); }
 .к-второму { flex: none; max-width: 150px; display: block; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
