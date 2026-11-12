@@ -6,12 +6,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Холст } from '../render/холст';
 import { useКухня } from '../store';
-import { КАТАЛОГ, КАТЕГОРИИ } from '../data/modules';
 import { ОБОИ, ПОЛЫ, ФАСАДЫ } from '../data/materials';
 import { смета, подписьЛистов, type Смета } from '../model/смета';
 import type { Obj } from '../types';
 import { Иконка, type ИмяИконки } from './design/Иконки';
 import { Знак } from './design/Логотип';
+import { useUI } from '../store/интерфейс';
+import { Каталог } from './Каталог';
+import { МиниКарта, ПланКвартиры } from './План';
 
 /* ------------------------------------------------------------------ вспомогательное */
 
@@ -86,14 +88,6 @@ function Число({ подпись, значение, наИзменение, 
   );
 }
 
-function значокПозиции(м: { название: string; фасад?: string; вид: string }): ИмяИконки {
-  if (м.вид === 'навесной' || /навесн|полка/i.test(м.название)) return 'полка';
-  if (м.фасад === 'ящики' || /ящик/i.test(м.название)) return 'ящик';
-  if (м.вид === 'проём') return 'ниша';
-  if (м.вид === 'техника') return 'слои';
-  return 'каталог';
-}
-
 /* ------------------------------------------------------------------ полоса инструментов */
 
 function Полоса() {
@@ -104,6 +98,7 @@ function Полоса() {
   const обзор = useКухня((s) => s.обзор);
   const установитьОбзор = useКухня((s) => s.установитьОбзор);
   const наЭкран = useКухня((s) => s.наЭкран);
+  const проблем = useКухня((s) => s.проблем);
   const тема = useКухня((s) => s.тема);
   const установитьТему = useКухня((s) => s.установитьТему);
   const следующая = тема === 'мастерская' ? 'калька' : тема === 'калька' ? 'система' : 'мастерская';
@@ -126,6 +121,19 @@ function Полоса() {
         <Иконка имя="прогулка" />
       </button>
       <div className="низ-полосы">
+        <button className="кн-и" type="button" title="Проверки: что не влезает" aria-label="Проверки" onClick={() => useUI.getState().открытьОкно('проверки')}>
+          <Иконка имя="проверки" />
+          {проблем > 0 && <i className="значок-число">{проблем}</i>}
+        </button>
+        <button className="кн-и" type="button" title="Экспорт" aria-label="Экспорт" onClick={() => useUI.getState().открытьОкно('экспорт')}>
+          <Иконка имя="экспорт" />
+        </button>
+        <button className="кн-и" type="button" title="Настройки" aria-label="Настройки" onClick={() => useUI.getState().открытьОкно('настройки')}>
+          <Иконка имя="настройки" />
+        </button>
+        <button className="кн-и" type="button" title="Справка" aria-label="Справка" onClick={() => useUI.getState().открытьОкно('справка')}>
+          <Иконка имя="справка" />
+        </button>
         <button
           className="кн-и"
           type="button"
@@ -149,6 +157,10 @@ function Верх() {
   const выгрузить = useКухня((s) => s.выгрузить);
   const открытьФайл = useКухня((s) => s.открытьФайл);
   const переименовать = useКухня((s) => s.переименовать);
+  const помещения = useКухня((s) => s.проект2.помещения);
+  const активное = useКухня((s) => s.помещениеАктивное);
+  const выбратьПомещение = useКухня((s) => s.выбратьПомещение);
+  const планОткрыт = useUI((s) => s.планОткрыт);
   const [имя, установитьИмя] = useState(названиеПроекта);
   useEffect(() => установитьИмя(названиеПроекта), [названиеПроекта]);
   return (
@@ -163,6 +175,19 @@ function Верх() {
           if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
         }}
       />
+      <div className="вкладки-помещений" role="tablist" aria-label="Помещения">
+        {помещения.map((п) => (
+          <button key={п.id} type="button" role="tab" className="вкладка" aria-selected={п.id === активное} onClick={() => выбратьПомещение(п.id)} title={п.название}>
+            {п.название}
+          </button>
+        ))}
+        {помещения.length > 1 && (
+          <button className="вкладка" type="button" aria-pressed={планОткрыт} onClick={() => useUI.getState().переключитьПлан()}>
+            <Иконка имя="слои" размер={16} />
+            План квартиры
+          </button>
+        )}
+      </div>
       <div className="справа">
         <span className={`сохранено${изменено ? ' правки' : ''}`} aria-live="polite">
           <i />
@@ -183,68 +208,6 @@ function Верх() {
   );
 }
 
-/* ------------------------------------------------------------------ каталог */
-
-function Каталог() {
-  const открыт = useКухня((s) => s.каталогОткрыт);
-  const закрыть = useКухня((s) => s.переключитьКаталог);
-  const поиск = useКухня((s) => s.поиск);
-  const установитьПоиск = useКухня((s) => s.установитьПоиск);
-  const категория = useКухня((s) => s.категория);
-  const установитьКатегорию = useКухня((s) => s.установитьКатегорию);
-  const добавитьМодуль = useКухня((s) => s.добавитьМодуль);
-  const сл = поиск.trim().toLowerCase();
-  const найдено = КАТАЛОГ.filter((m) => (!категория || m.категория === категория) && (!сл || m.название.toLowerCase().includes(сл) || m.id.includes(сл)));
-  const группы = КАТЕГОРИИ.map((к) => ({ к, позиции: найдено.filter((m) => m.категория === к) })).filter((г) => г.позиции.length);
-  return (
-    <aside className={`выезд слева${открыт ? ' открыта' : ''}`} aria-label="Каталог изделий" aria-hidden={!открыт}>
-      <div className="выезд-шапка">
-        <div>
-          <b>Каталог</b>
-          <span>Нажмите на изделие: оно встанет у стены</span>
-        </div>
-        <button className="кн-и малая" type="button" title="Закрыть (P)" aria-label="Закрыть каталог" onClick={() => закрыть(false)}>
-          <Иконка имя="закрыть" />
-        </button>
-      </div>
-      <div className="каталог-поиск">
-        <Иконка имя="поиск" />
-        <input placeholder="Шкаф, холодильник, окно…" value={поиск} onChange={(e) => установитьПоиск(e.target.value)} aria-label="Поиск по каталогу" />
-      </div>
-      <div className="чипы">
-        <button className="чип" type="button" aria-pressed={!категория} onClick={() => установитьКатегорию(null)}>
-          Всё
-        </button>
-        {КАТЕГОРИИ.map((к) => (
-          <button key={к} className="чип" type="button" aria-pressed={категория === к} onClick={() => установитьКатегорию(к)}>
-            {к}
-          </button>
-        ))}
-      </div>
-      <div className="выезд-тело">
-        {группы.length === 0 && <p className="пусто-панель">Ничего не нашлось. Попробуйте «тумба», «шкаф» или «окно».</p>}
-        {группы.map((г) => (
-          <div key={г.к}>
-            <div className="заголовок-группы">{г.к}</div>
-            {г.позиции.map((m) => (
-              <button className="позиция" type="button" key={m.id} onClick={() => добавитьМодуль(m.id)} title={m.заметка}>
-                <Иконка имя={значокПозиции(m)} размер={20} />
-                <span>
-                  <span className="имя">{m.название}</span>
-                  <br />
-                  <span className="размер">
-                    {m.габариты.ш} × {m.габариты.г} × {m.габариты.в} мм{m.крепление === 'навесное' ? ' · навесной' : ''}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-    </aside>
-  );
-}
-
 /* ------------------------------------------------------------------ свойства */
 
 function Материалы({ список, выбран, выбрать }: { список: { id: string; название: string; цвет: string }[]; выбран: string | undefined; выбрать: (м: { id: string; название: string; цвет: string }) => void }) {
@@ -256,6 +219,62 @@ function Материалы({ список, выбран, выбрать }: { с
           <span>{м.название}</span>
         </button>
       ))}
+    </div>
+  );
+}
+
+/** Материалы: поиск, избранное, свой цвет и пипетка (EyeDropper есть в Chromium/Electron) */
+function ПанельЦвета({ выбран, выбрать }: { выбран: string | undefined; выбрать: (цвет: string, имя: string) => void }) {
+  const [поиск, установитьПоиск] = useState('');
+  const { избранныеМатериалы, свойЦвета } = useUI();
+  const ui = useUI.getState();
+  const список = ФАСАДЫ.filter((м) => !поиск.trim() || м.название.toLowerCase().includes(поиск.trim().toLowerCase())).sort((a, b) => Number(избранныеМатериалы.includes(b.id)) - Number(избранныеМатериалы.includes(a.id)));
+  const пипетка = async () => {
+    const Е = (window as unknown as { EyeDropper?: new () => { open: () => Promise<{ sRGBHex: string }> } }).EyeDropper;
+    if (!Е) return;
+    try {
+      const р = await new Е().open();
+      ui.добавитьСвойЦвет(р.sRGBHex);
+      выбрать(р.sRGBHex, `Свой цвет ${р.sRGBHex}`);
+    } catch {
+      /* отменено */
+    }
+  };
+  return (
+    <div>
+      <div className="каталог-поиск" style={{ padding: 0, marginBottom: 8 }}>
+        <Иконка имя="поиск" />
+        <input placeholder="Поиск материала" value={поиск} onChange={(e) => установитьПоиск(e.target.value)} aria-label="Поиск материала" />
+      </div>
+      <div className="материалы">
+        {список.map((м) => (
+          <div key={м.id} className="материал-ячейка">
+            <button type="button" className="материал" aria-pressed={выбран === м.цвет} title={м.название} onClick={() => выбрать(м.цвет, м.название)}>
+              <i style={{ background: м.цвет }} />
+              <span>{м.название}</span>
+            </button>
+            <button type="button" className="звезда-мал" aria-pressed={избранныеМатериалы.includes(м.id)} aria-label="В избранное" title="В избранное" onClick={() => ui.переключитьИзбранныйМатериал(м.id)}>
+              <Иконка имя="звезда" размер={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <div className="ряд-кнопок">
+        <button className="кн" type="button" onClick={() => void пипетка()}>
+          Пипетка
+        </button>
+        <label className="кн цвет-свой" title="Свой цвет">
+          Свой цвет
+          <input type="color" value={выбран && выбран.startsWith('#') ? выбран : '#c08a4a'} onChange={(e) => выбрать(e.target.value, `Свой цвет ${e.target.value}`)} aria-label="Выбрать свой цвет" />
+        </label>
+      </div>
+      {свойЦвета.length > 0 && (
+        <div className="палитра" style={{ marginTop: 8 }}>
+          {свойЦвета.map((ц) => (
+            <button key={ц} type="button" className={`цвет ${выбран === ц ? 'активна' : ''}`} style={{ background: ц }} aria-label={`Свой цвет ${ц}`} title={ц} onClick={() => выбрать(ц, `Свой цвет ${ц}`)} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -376,11 +395,7 @@ function Свойства() {
 
         <section className="группа">
           <h3>Фасад и цвет</h3>
-          <Материалы
-            список={ФАСАДЫ}
-            выбран={о.цвет}
-            выбрать={(ф) => правка(() => обновитьОбъект(о.id, { цвет: ф.цвет, материал: ф.название }))}
-          />
+          <ПанельЦвета выбран={о.цвет} выбрать={(ц, имя) => правка(() => обновитьОбъект(о.id, { цвет: ц, материал: имя }))} />
         </section>
 
         <section className="группа">
@@ -455,34 +470,49 @@ function ПраваяПанель() {
   const комнатаОткрыта = useКухня((s) => s.комнатаОткрыта);
   const переключитьКомнату = useКухня((s) => s.переключитьКомнату);
   const выбрать = useКухня((s) => s.выбрать);
-  const открыта = выбрано > 0 || комнатаОткрыта;
+  const свёрнуты = useUI((s) => s.свёрнуты);
+  const установить = useUI((s) => s.установить);
+  const открыта = (выбрано > 0 && !свёрнуты) || комнатаОткрыта;
   return (
-    <aside className={`выезд справа${открыта ? ' открыта' : ''}`} aria-label="Свойства" aria-hidden={!открыта}>
-      {выбрано === 0 && комнатаОткрыта && (
-        <>
-          <div className="выезд-шапка">
-            <div>
-              <b>Помещение</b>
-              <span>Размеры и отделка</span>
+    <>
+      {выбрано > 0 && свёрнуты && !комнатаОткрыта && (
+        <button className="кн язычок" type="button" onClick={() => установить({ свёрнуты: false })} title="Развернуть свойства" aria-label="Развернуть свойства">
+          <Иконка имя="вниз" размер={16} />
+          Свойства
+        </button>
+      )}
+      <aside className={`выезд справа${открыта ? ' открыта' : ''}`} aria-label="Свойства" aria-hidden={!открыта}>
+        {выбрано === 0 && комнатаОткрыта && (
+          <>
+            <div className="выезд-шапка">
+              <div>
+                <b>Помещение</b>
+                <span>Размеры и отделка</span>
+              </div>
+              <button className="кн-и малая" type="button" aria-label="Закрыть" title="Закрыть" onClick={() => переключитьКомнату(false)}>
+                <Иконка имя="закрыть" />
+              </button>
             </div>
-            <button className="кн-и малая" type="button" aria-label="Закрыть" title="Закрыть" onClick={() => переключитьКомнату(false)}>
-              <Иконка имя="закрыть" />
-            </button>
-          </div>
-          <div className="выезд-тело">
-            <НастройкиКомнаты />
-          </div>
-        </>
-      )}
-      {выбрано > 0 && (
-        <>
-          <Свойства />
-          <button className="кн-и малая" type="button" aria-label="Снять выделение" title="Снять выделение (Esc)" style={{ position: 'absolute', right: 12, top: 12 }} onClick={() => выбрать([])}>
-            <Иконка имя="закрыть" />
-          </button>
-        </>
-      )}
-    </aside>
+            <div className="выезд-тело">
+              <НастройкиКомнаты />
+            </div>
+          </>
+        )}
+        {выбрано > 0 && (
+          <>
+            <Свойства />
+            <div className="шапка-кнопки">
+              <button className="кн-и малая" type="button" aria-label="Свернуть свойства" title="Свернуть свойства: объект останется выделенным" onClick={() => установить({ свёрнуты: true })}>
+                <Иконка имя="вправо" />
+              </button>
+              <button className="кн-и малая" type="button" aria-label="Снять выделение" title="Снять выделение (Esc)" onClick={() => выбрать([])}>
+                <Иконка имя="закрыть" />
+              </button>
+            </div>
+          </>
+        )}
+      </aside>
+    </>
   );
 }
 
@@ -606,10 +636,10 @@ function Низ() {
         <span className="плашка" title="Живая смета по деталям чертежа: листы ЛДСП 2750 × 1830 без отхода">
           <b>{с.изделий}</b> изделий · <b>{подписьЛистов(с.листов)}</b> · <b>{с.кромкаМ.toFixed(0)}</b> м кромки
         </span>
-        <span className={`плашка ${проблем ? 'ошибка' : 'ок'}`} role="status">
+        <button className={`плашка ${проблем ? 'ошибка' : 'ок'}`} type="button" onClick={() => useUI.getState().открытьОкно('проверки')} title="Открыть список проверок">
           <Иконка имя={проблем ? 'предупреждение' : 'проверки'} размер={18} />
           {проблем ? `Не влезает: ${проблем}` : 'Всё влезает'}
-        </span>
+        </button>
       </div>
     </footer>
   );
@@ -622,6 +652,7 @@ const ОСТРОВОК = <Островок />;
 
 export function Редактор({ ошибка3D }: { ошибка3D: string | null }) {
   const закрытьКаталог = useКухня((s) => s.переключитьКаталог);
+  const планОткрыт = useUI((s) => s.планОткрыт);
   return (
     <div className="редактор">
       <Полоса />
@@ -642,6 +673,8 @@ export function Редактор({ ошибка3D }: { ошибка3D: string | 
         ) : (
           <Холст>{ОСТРОВОК}</Холст>
         )}
+        <МиниКарта />
+        {планОткрыт && <ПланКвартиры />}
         <Каталог />
         <ПраваяПанель />
       </div>

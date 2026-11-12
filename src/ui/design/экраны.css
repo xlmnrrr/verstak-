@@ -1,0 +1,73 @@
+/* 1Б-2: мастер, проекты, окна, план квартиры, мини-карта */
+.экран-прокрутка { height: 100%; overflow: auto; background: var(--фон); padding: 32px 24px 48px; }
+.мастер, .проекты { width: min(960px, 100%); margin: 0 auto; display: flex; flex-direction: column; gap: var(--о-4); }
+.мастер-шапка { display: flex; align-items: center; gap: var(--о-3); }
+.мастер-шапка h2 { font-size: var(--т-24); font-weight: 680; margin-right: auto; }
+.справа-шапки { display: flex; gap: var(--о-2); }
+.мастер-форма, .мастер-сетка { background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-панель); padding: var(--о-5); display: flex; flex-direction: column; gap: var(--о-4); box-shadow: var(--тень-1); }
+.мастер .группа { background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-панель); }
+.мастер-два { display: grid; grid-template-columns: 1fr 200px; gap: var(--о-4); align-items: center; }
+.контур-мини { width: 180px; height: 180px; background: var(--поверх-2); border-radius: var(--р-поле); }
+h3.мелкий { font-size: var(--т-13); font-weight: 560; color: var(--текст-2); margin: 8px 0 6px; }
+.низ-мастера { display: flex; align-items: center; justify-content: space-between; gap: var(--о-3); }
+.подзаголовок { color: var(--текст-2); font-size: var(--т-13); }
+.кисти { display: flex; flex-wrap: wrap; gap: 6px; }
+.кубик { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; border: 1px solid var(--граница); }
+.сетка-клеток { display: grid; gap: 2px; background: var(--линия); padding: 2px; border-radius: 6px; user-select: none; touch-action: none; }
+.клетка { aspect-ratio: 1; min-height: 28px; border: 0; background: var(--поверх-2); border-radius: 2px; cursor: crosshair; padding: 0; }
+.клетка:hover { filter: brightness(1.15); }
+.панель-поиска { display: flex; gap: var(--о-3); align-items: center; }
+.проект-карточка .имя { overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.лист .штамп .заг { white-space: normal; overflow-wrap: anywhere; line-height: 1.15; max-height: 2.4em; overflow: hidden; }
+.затемнение { position: fixed; inset: 0; background: rgb(10 8 6 / 0.55); display: grid; place-items: center; z-index: 80; }
+.модал { width: min(440px, 92vw); background: var(--поверх-1); border: 1px solid var(--линия); border-radius: var(--р-модал); box-shadow: var(--тень-3); padding: var(--о-5); display: flex; flex-direction: column; gap: var(--о-3); }
+.модал.широкий { width: min(520px, 92vw); }
+.модал.окно { width: min(640px, 94vw); max-height: 86vh; padding: 0; gap: 0; overflow: hidden; }
+.модал.окно .выезд-тело { max-height: calc(86vh - 60px); }
+.модал h3 { font-size: var(--т-18); font-weight: 680; }
+.модал p { color: var(--текст-2); font-size: var(--т-13); }
+.тур-значок { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 14px; background: var(--поверх-2); color: var(--латунь); }
+.точки { display: flex; gap: 6px; justify-content: center; }
+.точки i { width: 6px; height: 6px; border-radius: 50%; background: var(--граница); }
+.точки i.акт { background: var(--латунь); }
+.список-проверок { list-style: none; margin: 0; padding: 0; }
+.настройки .флажок { display: flex; align-items: center; gap: 10px; font-size: var(--т-13); min-height: 32px; }
+.клавиши, .форматы { margin: 0; display: grid; gap: 8px; }
+.клавиши > div { display: grid; grid-template-columns: 150px 1fr; gap: 12px; align-items: center; font-size: var(--т-13); }
+.клавиши dt, .форматы dt { margin: 0; }
+.клавиши dd, .форматы dd { margin: 0; color: var(--текст-2); }
+.форматы > div { display: grid; grid-template-columns: 90px 1fr; gap: 12px; font-size: var(--т-13); }
+.форматы dt { font-weight: 640; color: var(--латунь); }
+.шаги-справки { margin: 0; padding-left: 20px; display: grid; gap: 8px; font-size: var(--т-13); color: var(--текст-2); }
+.вкладки-помещений { display: flex; gap: 4px; align-items: center; overflow-x: auto; max-width: 52%; }
+.вкладка { border: 0; background: transparent; min-height: 32px; padding: 0 12px; border-radius: 8px; font-size: var(--т-13); font-weight: 560; color: var(--текст-2); cursor: pointer; display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.вкладка:hover { background: var(--поверх-2); color: var(--текст-1); }
+.вкладка[aria-selected='true'], .вкладка[aria-pressed='true'] { background: var(--поверх-3); color: var(--текст-1); }
+.значок-число { position: absolute; right: 2px; top: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--опасно); color: var(--фон); font: 600 13px/16px var(--ш-текст); text-align: center; font-style: normal; padding: 0 4px; }
+.шапка-кнопки { position: absolute; right: 8px; top: 12px; display: flex; gap: 2px; }
+.язычок { position: absolute; right: 0; top: 16px; z-index: 3; border-radius: 10px 0 0 10px; border-right: 0; }
+.позиция-ряд { display: flex; align-items: center; }
+.позиция-ряд .позиция { flex: 1; min-width: 0; }
+.позиция-ряд .звезда { margin-right: 8px; color: var(--текст-3); }
+.позиция-ряд .звезда[aria-pressed='true'] { color: var(--латунь); }
+.позиция-ряд .звезда[aria-pressed='true'] svg { fill: currentColor; }
+.материал-ячейка { position: relative; min-width: 0; }
+.звезда-мал { position: absolute; right: 2px; top: 2px; width: 22px; height: 22px; border: 0; border-radius: 6px; background: color-mix(in srgb, var(--поверх-1) 80%, transparent); color: var(--текст-2); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.звезда-мал[aria-pressed='true'] { color: var(--латунь); }
+.звезда-мал[aria-pressed='true'] svg { fill: currentColor; }
+.цвет-свой { position: relative; cursor: pointer; }
+.цвет-свой input { width: 28px; height: 24px; border: 0; padding: 0; background: transparent; cursor: pointer; }
+.мини-карта { position: absolute; left: 16px; bottom: 16px; width: 148px; height: 112px; background: var(--поверх-1); border: 1px solid var(--граница); border-radius: 10px; box-shadow: var(--тень-1); padding: 6px; pointer-events: none; z-index: 2; }
+.мини-карта svg { width: 100%; height: 100%; }
+.мини-контур { fill: var(--поверх-2); stroke: var(--латунь); stroke-width: 40; stroke-linejoin: round; }
+.мини-изделие { fill: var(--текст-3); opacity: 0.55; }
+.мини-выбран { fill: var(--латунь); }
+.план-квартиры { position: absolute; inset: 0; z-index: 5; background: var(--фон); display: flex; flex-direction: column; }
+.план-шапка { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--линия); background: var(--поверх-1); }
+.план-шапка span { color: var(--текст-2); font-size: var(--т-13); margin-right: auto; }
+.план-svg { flex: 1; min-height: 0; width: 100%; }
+.план-комната polygon { fill: var(--поверх-2); stroke: var(--текст-2); cursor: pointer; stroke-linejoin: round; }
+.план-комната text { fill: var(--текст-1); pointer-events: none; font-family: var(--ш-текст); }
+.план-комната:hover polygon, .план-комната:focus polygon { fill: var(--поверх-3); }
+.план-комната.акт polygon { stroke: var(--латунь); }
+.план-дверь { fill: var(--синька); pointer-events: none; }

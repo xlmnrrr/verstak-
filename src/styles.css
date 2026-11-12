@@ -1,5 +1,6 @@
 @import './ui/design/tokens.css';
 @import './ui/design/base.css';
+@import './ui/design/экраны.css';
 
 /* ═════════ ОБЛОЖКА ═════════ */
 .обложка {
@@ -411,7 +412,7 @@
   top: 0;
   background: var(--опасно);
   color: var(--фон);
-  font: 500 var(--т-12) / 1 var(--ш-размер);
+  font: 500 var(--т-13) / 1 var(--ш-размер);
   padding: 5px 8px;
   border-radius: 5px;
   white-space: nowrap;
@@ -599,7 +600,7 @@
   height: 36px;
   background: var(--поверх-2);
   color: var(--текст-1);
-  border: 1px solid transparent;
+  border: 1px solid var(--граница);
   border-radius: var(--р-поле);
   padding: 0 var(--о-2) 0 34px;
   font: 400 14px var(--ш-текст);
@@ -618,7 +619,7 @@
   min-height: 32px;
   padding: 0 12px;
   border-radius: 16px;
-  border: 1px solid var(--линия);
+  border: 1px solid var(--граница);
   background: transparent;
   color: var(--текст-2);
   font-size: var(--т-13);
@@ -720,7 +721,7 @@
   height: 32px;
   background: var(--поверх-2);
   color: var(--текст-1);
-  border: 1px solid transparent;
+  border: 1px solid var(--граница);
   border-radius: var(--р-поле);
   padding: 0 var(--о-2);
   font: 400 var(--т-13) var(--ш-текст);
@@ -836,7 +837,7 @@
   font-weight: 640;
 }
 .проект-карточка .мета {
-  font-size: var(--т-12);
+  font-size: var(--т-13);
   color: var(--текст-2);
 }
 .форма {

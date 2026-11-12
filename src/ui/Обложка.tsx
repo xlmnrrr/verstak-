@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Холст } from '../render/холст';
 import { useКухня, type ТемаИнтерфейса } from '../store';
+import { useUI } from '../store/интерфейс';
 import { собратьДемо } from '../lib/демо';
 import * as хранилище from '../lib/storage';
 import type { ЗаписьСписка } from '../lib/storage';
@@ -126,6 +127,16 @@ export function Обложка() {
           </button>
         </div>
         <div className="обложка-низ-лево">
+          <div className="ряд-кнопок">
+            <button className="кн" type="button" onClick={() => useUI.getState().открытьОкно('настройки')}>
+              <Иконка имя="настройки" размер={18} />
+              Настройки
+            </button>
+            <button className="кн" type="button" onClick={() => useUI.getState().открытьОкно('справка')}>
+              <Иконка имя="справка" размер={18} />
+              Справка
+            </button>
+          </div>
           <ПереключательТемы />
           <small>Версия 0.1 · всё работает без интернета</small>
         </div>

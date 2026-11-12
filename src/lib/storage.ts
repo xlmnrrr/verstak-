@@ -31,6 +31,7 @@ interface МостКухни {
   выбратьФайл(): Promise<{ ок: boolean; текст?: string; имя?: string; ошибка?: string }>;
   сохранитьВФайл(имя: string, текст: string): Promise<{ ок: boolean; путь?: string; ошибка?: string }>;
   путьПроектов?: () => Promise<string>;
+  превью?: (имя: string, картинка: string) => Promise<{ ок: boolean }>;
   авто: {
     записать(имя: string, текст: string): Promise<{ ок: boolean; ошибка?: string }>;
     найти(): Promise<Автосохранение[]>;
@@ -205,4 +206,10 @@ export async function удалитьАвтосохранение(названи�
 export async function интервалАвтосохранения(): Promise<number> {
   if (естьElectron()) return window.кухня!.авто.интервал();
   return 60;
+}
+
+/** Тихо обновить превью сохранённого проекта (при автосохранении) */
+export async function обновитьПревью(название: string, картинка: string | undefined): Promise<void> {
+  if (!картинка || !естьElectron()) return;
+  await window.кухня!.превью?.(очиститьИмя(название), картинка);
 }

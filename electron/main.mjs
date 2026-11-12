@@ -338,6 +338,24 @@ ipcMain.handle('авто:интервал', async () => {
   return Number.isFinite(н) && н >= 1 ? н : 60;
 });
 
+/** Превью при автосохранении: пишется рядом с проектом, только если проект уже сохранён */
+ipcMain.handle('проекты:превью', async (_e, имя, превью) => {
+  try {
+    const п = папкаПроектов();
+    const н = очиститьИмя(имя);
+    if (!fs.existsSync(путьВнутри(п, н)) || !превью || !превью.startsWith('data:image')) return { ок: false };
+    fs.writeFileSync(path.join(п, `${н}.jpg`), Buffer.from(превью.split(',')[1], 'base64'));
+    return { ок: true };
+  } catch {
+    return { ок: false };
+  }
+});
+
+ipcMain.handle('система:автозапуск', async (_e, вкл) => {
+  app.setLoginItemSettings({ openAtLogin: !!вкл });
+  return { ок: true };
+});
+
 ipcMain.handle('пути:проекты', async () => папкаПроектов());
 
 app.on('second-instance', () => {

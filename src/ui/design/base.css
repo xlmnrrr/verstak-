@@ -65,7 +65,7 @@ button {
   min-height: 36px;
   padding: 0 14px;
   border-radius: var(--р-кнопка);
-  border: 1px solid var(--линия);
+  border: 1px solid var(--граница);
   background: var(--поверх-2);
   font-size: var(--т-13);
   font-weight: 560;
@@ -181,7 +181,7 @@ button {
   width: 100%;
   background: var(--поверх-2);
   color: var(--текст-1);
-  border: 1px solid transparent;
+  border: 1px solid var(--граница);
   border-radius: var(--р-поле);
   padding: 0 var(--о-2);
   font: 400 14px var(--ш-текст);
