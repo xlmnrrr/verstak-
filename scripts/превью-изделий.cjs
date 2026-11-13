@@ -86,7 +86,7 @@ fs.mkdirSync(папка, { recursive: true });
           и.материалы,
           и.габариты,
         ]);
-        return { id: и.id, название: и.название, тип: и.тип, подъём: и.подъём ?? 0, габ: и.габариты, хэш: fnv(ключ) };
+        return { id: и.id, название: и.название, тип: и.тип, крепление: и.крепление, подъём: и.подъём ?? 0, габ: и.габариты, хэш: fnv(ключ) };
       });
     });
 
@@ -101,9 +101,10 @@ fs.mkdirSync(папка, { recursive: true });
           const с = window.__верстакStore.getState();
           const я = window.__кухня.ядро;
           const { gl, scene, camera } = window.__кухня;
-          const y = изд.тип === 'свет' ? изд.подъём || 1800 : 0;
-          const id = с.добавитьМодуль(изд.id, [0, y, 0]);
+          const id = с.добавитьМодуль(изд.id, [0, изд.тип === 'свет' ? изд.подъём || 1800 : 0, 0]);
           if (!id) return null;
+          // высота — как поставил редактор (потолочные — к потолку)
+          const y = window.__верстакStore.getState().проект2.объекты.find((о) => о.id === id)?.позиция[1] ?? 0;
           window.__верстакStore.getState().выбрать([]);
           // центр и радиус габарита (метры)
           const cx = 0;
@@ -114,7 +115,8 @@ fs.mkdirSync(папка, { recursive: true });
           camera.aspect = gl.domElement.clientWidth / gl.domElement.clientHeight;
           const d = (R / Math.sin(((camera.fov / 2) * Math.PI) / 180)) * 1.05;
           const φ = (40 * Math.PI) / 180;
-          const θ = (27 * Math.PI) / 180;
+          // потолочные светильники — снизу, как их видно из комнаты
+          const θ = ((изд.крепление === 'потолок' ? -38 : 27) * Math.PI) / 180;
           camera.position.set(cx + d * Math.sin(φ) * Math.cos(θ), cy + d * Math.sin(θ), cz + d * Math.cos(φ) * Math.cos(θ));
           camera.lookAt(cx, cy, cz);
           camera.updateProjectionMatrix();

@@ -22,7 +22,8 @@ export type КлассМодели =
   | 'ткань-стёганая'
   | 'рогожка'
   | 'берёза'
-  | 'керамика';
+  | 'керамика'
+  | 'краска-белая';
 
 interface ОписаниеКласса {
   создать: () => THREE.MeshPhysicalMaterial | THREE.MeshStandardMaterial;
@@ -54,6 +55,8 @@ const КЛАССЫ: Record<КлассМодели, ОписаниеКласса>
   рогожка: { создать: ф({ color: '#ffffff', roughness: 1, sheen: 0.9, sheenRoughness: 0.55, sheenColor: new THREE.Color('#bdb6aa') }), тень: 'всегда', текстура: { имя: 'рогожка', шаг: 0.22 } },
   // санфаянс: белая глазурь, глянец (clearcoat)
   керамика: { создать: ф({ color: '#f3f3f0', roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.9 }), тень: 'всегда' },
+  // порошковая белая эмаль кольца светильника
+  'краска-белая': { создать: ф({ color: '#f1f1ee', metalness: 0, roughness: 0.42, clearcoat: 0.25, clearcoatRoughness: 0.3 }), тень: 'фото' },
   берёза: { создать: ф({ color: '#d9bd8f', roughness: 0.62, clearcoat: 0.15, clearcoatRoughness: 0.5 }), тень: 'всегда' },
 };
 

@@ -27,6 +27,8 @@ export const СИЛА_РЕЛЬЕФА = { value: 0.7 };
 
 /** Общий uniform положения камеры для стен */
 export const ПОЛОЖЕНИЕ_КАМЕРЫ = { value: new THREE.Vector3() };
+/** 1 — камера внутри помещения (по контуру и ниже верха стен): стены не срезаются, иначе в Г-образной комнате видны дыры */
+export const КАМЕРА_ВНУТРИ = { value: 0 };
 
 const ВЕРШИНА_ОБЩАЯ = /* glsl */ `
 attribute vec3 aSize;
@@ -37,6 +39,7 @@ attribute vec3 aOff;
 #endif
 #ifdef WALL
 uniform vec3 uViewPos;
+uniform float uInside;
 #endif
 #ifdef DETAIL
 varying vec3 vLocal;
@@ -61,7 +64,7 @@ vec3 transformed;
   {
     vec3 nw = normalize(mat3(instanceMatrix) * vec3(0.0, 0.0, 1.0));
     vec3 cw = instanceMatrix[3].xyz;
-    if (dot(uViewPos - cw, nw) < 0.0) transformed = vec3(0.0);
+    if (uInside < 0.5 && dot(uViewPos - cw, nw) < 0.0) transformed = vec3(0.0);
   }
 #endif
 vSurf = aSurf;
@@ -200,6 +203,7 @@ const d_set = (д: Record<string, string>, k: string) => {
 /** Патч шейдера цветового прохода (MeshStandardMaterial) */
 export function патчЦвета(шейдер: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) {
   шейдер.uniforms.uViewPos = ПОЛОЖЕНИЕ_КАМЕРЫ;
+  шейдер.uniforms.uInside = КАМЕРА_ВНУТРИ;
   шейдер.uniforms.uTex = МАССИВ_ТЕКСТУР;
   шейдер.uniforms.uTexScale = МАСШТАБЫ_СЛОЁВ;
   шейдер.uniforms.uNor = МАССИВ_НОРМАЛЕЙ;

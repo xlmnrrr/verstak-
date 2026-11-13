@@ -12,7 +12,7 @@ import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { применитьПрофильМоделей, установитьОкружениеМоделей } from './модели/материалы-моделей';
-import { границыКонтура, высотаДляРендера } from '../model/помещение';
+import { границыКонтура, высотаДляРендера, точкаВнутри } from '../model/помещение';
 import { проверитьВлезает, type Проблема } from '../model/проверка';
 import type { ПроектV2 } from '../model/типы';
 import { useКухня, зарегистрироватьПревью, снятьРегистрациюПревью } from '../store';
@@ -41,7 +41,7 @@ import { зазоры, type Подсказка } from '../model/привязка
 import { Тени } from './тени';
 import { изделиеПоИд } from '../model/каталог';
 import { движенияИзделия, конфликтыЭкземпляра, открытыеГруппы, препятствияПомещения, развёртка, фигураВМире, type КонфликтОткрывания } from '../model/открывание';
-import { ПОЛОЖЕНИЕ_КАМЕРЫ } from './шейдер-плиты';
+import { ПОЛОЖЕНИЕ_КАМЕРЫ, КАМЕРА_ВНУТРИ } from './шейдер-плиты';
 import { подписьОтметки, точкаПодписи } from '../model/отметки';
 import type { Помещение } from '../model/типы';
 
@@ -125,6 +125,8 @@ export class Ядро {
   private отписка: (() => void) | null = null;
   private отпискаUI: (() => void) | null = null;
   private лампы: THREE.PointLight[] = [];
+  /** прожекторы точечных светильников (вечером): конус вниз, без теней; число ограничено — дальше светится только линза */
+  private прожекторы: THREE.SpotLight[] = [];
   private последнийЧас: number | null | undefined = undefined;
   private открытий = -1;
   private ключОбласти = '';
@@ -154,7 +156,14 @@ export class Ядро {
     this.самопроверкаГотова = new Promise((r) => (this.завершитьСамопроверку = r));
 
     // положение камеры для стен: работает и при ручном gl.render (замеры)
-    scene.onBeforeRender = (_r, _s, cam) => ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(cam.position);
+    scene.onBeforeRender = (_r, _s, cam) => {
+      ПОЛОЖЕНИЕ_КАМЕРЫ.value.copy(cam.position);
+      // камера в комнате — стены не срезаются (Г-образные и любые невыпуклые помещения)
+      const с = useКухня.getState();
+      const пом = с.проект2.помещения.find((п) => п.id === с.помещениеАктивное);
+      const p = cam.position;
+      КАМЕРА_ВНУТРИ.value = пом && p.y * 1000 < высотаДляРендера(пом) && точкаВнутри(пом.контур, p.x * 1000, p.z * 1000) ? 1 : 0;
+    };
 
     this.материалы = создатьМатериалы(this.профиль.шейдер);
     this.сборщик = new СборщикСцены(scene, this.материалы);
@@ -414,7 +423,10 @@ export class Ядро {
     const час = this.последнийЧас;
     const ночь = час != null && (час >= 19 || час < 7.5);
     const с = useКухня.getState();
-    const светильники = ночь ? с.проект2.объекты.filter((о) => о.помещение === с.помещениеАктивное && о.изделие.startsWith('светильник')).slice(0, 4) : [];
+    const вКомнате = ночь ? с.проект2.объекты.filter((о) => о.помещение === с.помещениеАктивное && о.изделие.startsWith('светильник')) : [];
+    const точечные = вКомнате.filter((о) => изделиеПоИд(о.изделие)?.конструкция === 'светильник');
+    const светильники = вКомнате.filter((о) => !точечные.includes(о)).slice(0, 4);
+    this.обновитьПрожекторы(точечные);
     while (this.лампы.length < светильники.length) {
       const л = new THREE.PointLight('#ffd9a0', 0, 7, 2);
       this.о.scene.add(л);
@@ -427,6 +439,36 @@ export class Ядро {
         л.position.set(о.позиция[0] / 1000, (о.позиция[1] + о.габариты.в * 0.9) / 1000, о.позиция[2] / 1000);
         л.intensity = 14;
       }
+    });
+  }
+
+  /**
+   * Вечером над каждым точечным светильником — прожектор вниз (до МАКС_ПРОЖЕКТОРОВ, без теней): пятна света на полу и
+   * «арки» на стенах. Светильников больше — свет даёт каждый второй с удвоенной силой (общая освещённость та же).
+   */
+  private обновитьПрожекторы(точечные: { позиция: [number, number, number]; габариты: { ш: number; г: number; в: number }; изделие: string }[]) {
+    const МАКС = 8;
+    const шаг = точечные.length > МАКС ? Math.ceil(точечные.length / МАКС) : 1;
+    const выбранные = точечные.filter((_, i) => i % шаг === 0).slice(0, МАКС);
+    while (this.прожекторы.length < выбранные.length) {
+      const л = new THREE.SpotLight('#ffd7a8', 0, 6.5, 1.0, 0.75, 2);
+      this.о.scene.add(л, л.target);
+      this.прожекторы.push(л);
+    }
+    this.прожекторы.forEach((л, i) => {
+      const о = выбранные[i];
+      л.visible = !!о;
+      if (!о) return;
+      const узкий = о.изделие.includes('цилиндр');
+      const x = о.позиция[0] / 1000;
+      const z = о.позиция[2] / 1000;
+      const y = о.позиция[1] / 1000 - 0.005;
+      л.position.set(x, y, z);
+      л.target.position.set(x, 0, z);
+      л.target.updateMatrixWorld();
+      л.angle = узкий ? 0.5 : 1.0;
+      л.penumbra = узкий ? 0.5 : 0.8;
+      л.intensity = (узкий ? 9 : 6) * шаг;
     });
   }
 

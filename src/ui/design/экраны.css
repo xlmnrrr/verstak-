@@ -220,3 +220,28 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .план-отметка { fill: var(--синька); }
 .план-отметка.выбрана { fill: var(--латунь); }
 .план-отметка-текст { fill: var(--текст-1); font-family: var(--ш-текст); }
+
+/* План стен в окне «Помещение» (13.11): тянуть угол и стену, выступ, вырез угла, точка, удаление угла; обмер */
+.план-стен svg { width: 100%; aspect-ratio: 4 / 3; background: var(--поверх-2); border: 1px solid var(--линия); border-radius: var(--р-поле); touch-action: none; user-select: none; }
+.план-пол { fill: color-mix(in srgb, var(--синька) 12%, transparent); }
+.план-стена { stroke: var(--текст-2); stroke-linecap: round; cursor: move; }
+.план-стена:hover { stroke: var(--текст-1); }
+.план-стена.выбрана { stroke: var(--латунь); }
+.план-угол { fill: var(--поверх-1); stroke: var(--синька); stroke-width: 2; cursor: grab; vector-effect: non-scaling-stroke; }
+.план-угол:hover, .план-угол.выбран { fill: var(--латунь); }
+.план-размер { fill: var(--текст-1); font-family: var(--ш-мон, var(--ш-текст)); pointer-events: none; }
+.обмер { margin: var(--о-2) 0; font-size: var(--т-13); color: var(--текст-2); font-variant-numeric: tabular-nums; }
+.обмер b { color: var(--текст-1); font-weight: 620; }
+.план-стен .поля3 { grid-template-columns: repeat(2, 1fr); }
+.план-стен .ряд-кнопок { flex-wrap: wrap; gap: 6px; }
+
+/* Смета (13.11): обмер, группы с ценами мастера, итог, изделия; длины в мм / см / м */
+.смета-панель { display: flex; flex-wrap: wrap; gap: var(--о-2); align-items: center; margin-bottom: var(--о-2); }
+.смета-панель .сегменты { width: auto; }
+.смета-таблица td:first-child small, .смета-изделия td:first-child small { display: block; font-size: var(--т-12, 12px); color: var(--текст-3); font-family: var(--ш-текст); }
+.смета-таблица small.смета-единицы { color: var(--текст-2); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.смета-таблица input { width: 104px; min-height: 32px; text-align: right; font: inherit; color: var(--текст-1); background: var(--поверх-2); border: 1px solid var(--линия); border-radius: 8px; padding: 2px 8px; }
+.смета-таблица td:last-child { white-space: nowrap; }
+.смета-итог { margin: var(--о-3) 0; padding: var(--о-3); border-radius: var(--р-поле); background: var(--поверх-2); font-size: var(--т-14, 14px); }
+.смета-итог b { font-size: 18px; color: var(--латунь); font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.смета-итог span { color: var(--текст-3); font-size: var(--т-13); }
