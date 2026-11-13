@@ -206,3 +206,17 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .шторка-метка.слева { left: 12px; }
 .шторка-метка.справа { right: 12px; }
 .шторка-закрыть { pointer-events: auto; position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%); }
+
+/* A4: отметки на стенах в окне «Помещение», подписи на сцене и плане */
+.отметки-стен > .кн { margin-top: var(--о-2); }
+.список-отметок { list-style: none; margin: var(--о-3) 0 0; padding: 0; display: grid; gap: var(--о-1); }
+.список-отметок button { width: 100%; min-height: 40px; display: grid; gap: 2px; padding: var(--о-2) var(--о-3); text-align: left; font: inherit; color: var(--текст-1); background: var(--поверх-2); border: 1px solid var(--линия); border-radius: var(--р-поле); cursor: pointer; }
+.список-отметок button span { font-size: var(--т-13); color: var(--текст-2); }
+.список-отметок button:hover { background: var(--поверх-3); }
+.список-отметок button[aria-pressed='true'] { border-color: var(--латунь); box-shadow: inset 0 0 0 1px var(--латунь); }
+.редактор-отметки { display: grid; gap: var(--о-2); margin-top: var(--о-3); padding: var(--о-3); background: var(--поверх-1); border: 1px solid var(--латунь); border-radius: var(--р-кнопка); }
+.размер-метка.отметка { color: var(--синька); border-color: var(--синька); font-family: var(--ш-текст); font-weight: 560; }
+.размер-метка.отметка.выбрана { color: var(--на-латуни); background: var(--латунь); border-color: var(--латунь); }
+.план-отметка { fill: var(--синька); }
+.план-отметка.выбрана { fill: var(--латунь); }
+.план-отметка-текст { fill: var(--текст-1); font-family: var(--ш-текст); }

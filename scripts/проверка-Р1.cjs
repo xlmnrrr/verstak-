@@ -161,6 +161,89 @@ function взгляд(P, T) {
       }
     }
 
+    /* ------------------------------------------------------------ A4: редактор отметок на стенах */
+    if (ШАГИ.includes('A4')) {
+      await загрузить(`return м.проект.новыйПроектV2('Отметки', м.помещение.новоеПомещение('п1', 'кухня', 'Кухня', м.помещение.прямоугольник(3600, 2800)));`);
+      await S(() => window.__верстакStore.getState().переключитьКомнату(true));
+      await пауза(600);
+      const выбрать = (метка, значение) =>
+        S((метка, значение) => {
+          const эл = document.querySelector(`select[aria-label="${метка}"]`);
+          Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(эл, String(значение));
+          эл.dispatchEvent(new Event('change', { bubbles: true }));
+        }, метка, значение);
+      const вписать = (подпись, значение) =>
+        S((подпись, значение) => {
+          const поле = [...document.querySelectorAll('.редактор-отметки .поле')].find((п) => п.querySelector('label')?.textContent === подпись);
+          const вв = поле.querySelector('input');
+          вв.focus();
+          Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(вв, String(значение));
+          вв.dispatchEvent(new Event('input', { bubbles: true }));
+          вв.blur();
+        }, подпись, значение);
+      const отметки = () => S(() => window.__верстакStore.getState().проект2.помещения[0].отметки.map((о) => ({ вид: о.вид, стена: о.стена, от_угла: о.от_угла, от_пола: о.от_пола })));
+      const поставить = async (вид, стена) => {
+        await выбрать('Вид отметки', вид);
+        await выбрать('Стена для новой отметки', стена);
+        await S(() => document.querySelector('[data-действие="поставить-отметку"]').click());
+        await пауза(300);
+      };
+      await поставить('радиатор', 0);
+      let о = await отметки();
+      проверка('A4: «Поставить на стену» — радиатор на задней стене, размеры по умолчанию', о.length === 1 && о[0].вид === 'радиатор' && о[0].стена === 0 && о[0].от_пола === 150, JSON.stringify(о));
+      await вписать('От угла, мм', 600);
+      await пауза(200);
+      await S(() => [...document.querySelectorAll('.редактор-отметки button')].find((b) => b.textContent.includes('50 →')).click());
+      await пауза(200);
+      о = await отметки();
+      проверка('A4: изменить цифрой (от угла 600) и подвинуть кнопкой на 50 → 650', о[0].от_угла === 650, JSON.stringify(о[0]));
+      await поставить('вода', 1);
+      await поставить('розетка', 0);
+      await поставить('щиток', 3);
+      о = await отметки();
+      проверка('A4: четыре отметки на трёх стенах', о.length === 4, о.map((x) => x.вид).join(', '));
+      await камера([-1.2, 1.9, 1.3], [0.9, 0.6, -0.7]);
+      await пауза(900);
+      const подписи = await S(() => [...document.querySelectorAll('.размер-метка.отметка')].filter((э) => э.style.display !== 'none').map((э) => э.textContent));
+      проверка('A4: на сцене подписи вида и высоты («Радиатор · 150», «Розетка · 300»…)', подписи.includes('Радиатор · 150') && подписи.includes('Розетка · 300') && подписи.length >= 3, подписи.join(' | '));
+      await снять('A4-отметки-в-3D', 600);
+      // удалить и вернуть (история)
+      // выбрать вторую отметку в списке (последняя поставленная уже выбрана) — щелчком по строке
+      const вторая = await S(() => window.__верстакStore.getState().проект2.помещения[0].отметки[1].id);
+      await S((id) => document.querySelector(`[data-отметка="${id}"]`).click(), вторая);
+      await пауза(200);
+      проверка('A4: щелчок по строке списка открывает редактор этой отметки', await S((id) => !!document.querySelector(`[data-редактор-отметки="${id}"]`), вторая));
+      await S(() => [...document.querySelectorAll('.редактор-отметки button')].find((b) => b.textContent.includes('Удалить')).click());
+      await пауза(200);
+      const после = (await отметки()).length;
+      await S(() => window.__верстакStore.getState().отменить());
+      await пауза(200);
+      проверка('A4: «Удалить» убирает отметку, Ctrl+Z возвращает', после === 3 && (await отметки()).length === 4, `${после} → ${(await отметки()).length}`);
+      // план квартиры
+      await S(() => window.__верстакUI.getState().переключитьПлан(true));
+      await пауза(600);
+      const наПлане = await S(() => [...document.querySelectorAll('[data-план-отметка] text')].map((т) => т.textContent));
+      проверка('A4: на плане — отметки с подписью вида и высоты', наПлане.length === 4 && наПлане.includes('Вода · 500'), наПлане.join(' | '));
+      await снять('A4-отметки-на-плане', 500);
+      await S(() => window.__верстакUI.getState().переключитьПлан(false));
+      // сохранить, открыть заново
+      await S(() => window.__верстакStore.getState().сохранить());
+      await пауза(800);
+      await S(() => window.__верстакStore.getState().открыть('Отметки'));
+      await пауза(1500);
+      const сФайла = await отметки();
+      проверка('A4: отметки сохранены в .kitchen и открываются', сФайла.length === 4 && сФайла[0].от_угла === 650, JSON.stringify(сФайла));
+      // «Предложи планировку» учитывает
+      await S(() => window.__верстакStore.getState().переключитьКомнату(false));
+      await S(() => document.querySelector('button[aria-label="Проектировщик"]')?.click());
+      await пауза(400);
+      await S(() => document.querySelector('[data-действие="предложить"]')?.click());
+      await пауза(2500);
+      const учтено = await S(() => [...document.querySelectorAll('.вариант')].map((в) => ({ чисто: в.querySelector('.метка-чисто')?.textContent, радиатор: /Радиатор 800/.test(в.textContent), вода: /Мойка в \d+ мм от точки воды/.test(в.textContent) })));
+      проверка('A4: «Предложи планировку» учитывает радиатор и воду, варианты без замечаний', учтено.length > 0 && учтено.every((в) => в.чисто === 'без замечаний' && в.радиатор && в.вода), JSON.stringify(учтено));
+      await S(() => window.__верстакUI.getState().открытьОкно(null));
+    }
+
     /* ------------------------------------------------------------ итог */
     проверка('ошибок шейдера нет', к.шейдер.length === 0, к.шейдер.slice(0, 2).join(' | '));
     проверка('ошибок консоли нет', к.ошибки.length === 0, к.ошибки.slice(0, 3).join(' | '));
