@@ -21,13 +21,13 @@ export type ВидТехники =
 
 export function видТехники(изд: Pick<Изделие, 'id' | 'тип'>): ВидТехники {
   const id = изд.id;
-  if (id.startsWith('холодильник')) return 'холодильник';
+  if (id.startsWith('холодильник') || id.startsWith('винный-шкаф')) return 'холодильник';
   if (id.startsWith('морозильник')) return 'морозильник';
   if (id.startsWith('плита-')) return 'плита';
   if (id.startsWith('духовка')) return 'духовка';
   if (id.startsWith('микроволновка')) return 'микроволновка';
   if (id.startsWith('посудомойка')) return 'посудомойка';
-  if (id.startsWith('стиральная')) return 'стиральная';
+  if (id.startsWith('стиральная') || id.startsWith('сушильная')) return 'стиральная';
   if (id.startsWith('вытяжка-купольная')) return 'вытяжка-купольная';
   if (id.startsWith('вытяжка-встроенная') || id.startsWith('вытяжка-встраиваемая')) return 'вытяжка-встроенная';
   return 'прочее';
@@ -78,7 +78,7 @@ function ручкаВертикальная(xКрая: number, сторонаП�
 }
 
 /** Сторона петли для i-й двери: «попарно» — каждая дверь в свою сторону */
-function сторона(петли: СторонаПетель, i: number): 'слева' | 'справа' {
+export function сторона(петли: СторонаПетель, i: number): 'слева' | 'справа' {
   if (петли === 'справа') return 'справа';
   if (петли === 'попарно') return i % 2 === 0 ? 'слева' : 'справа';
   return 'слева';

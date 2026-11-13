@@ -23,20 +23,30 @@ export type КлассМодели =
   | 'рогожка'
   | 'берёза'
   | 'керамика'
-  | 'краска-белая';
+  | 'краска-белая'
+  | 'дерево'
+  | 'кожа'
+  | 'ткань'
+  | 'эмаль-белая'
+  | 'пластик-светлый'
+  | 'листва'
+  | 'земля'
+  | 'зеркало-м'
+  | 'тюль'
+  | 'штора';
 
 interface ОписаниеКласса {
   создать: () => THREE.MeshPhysicalMaterial | THREE.MeshStandardMaterial;
   /** отбрасывает тень: всегда, только в «Фото» (мелочь меньше текселя карты 2048), никогда */
   тень: 'всегда' | 'фото' | 'нет';
-  текстура?: { имя: string; шаг: number; вращение?: number };
+  текстура?: { имя: string; шаг: number; вращение?: number; безЦвета?: boolean };
 }
 
 const ф = (п: THREE.MeshPhysicalMaterialParameters) => () => new THREE.MeshPhysicalMaterial(п);
 
 const КЛАССЫ: Record<КлассМодели, ОписаниеКласса> = {
   // шлифованная нержавейка: вытянутый блик поперёк шлифовки (анизотропия), шлифовка — текстура Metal009
-  нержавейка: { создать: ф({ color: '#d4d7db', metalness: 0.9, roughness: 0.38, anisotropy: 0.75, anisotropyRotation: 0, envMapIntensity: 0.85 }), тень: 'всегда', текстура: { имя: 'металл-шлифованный', шаг: 0.3 } },
+  нержавейка: { создать: ф({ color: '#d4d7db', metalness: 0.9, roughness: 0.38, anisotropy: 0.75, anisotropyRotation: 0, envMapIntensity: 0.85 }), тень: 'всегда', текстура: { имя: 'металл-шлифованный', шаг: 0.6, безЦвета: true } },
   'нержавейка-пруток': { создать: ф({ color: '#d4d7db', metalness: 0.92, roughness: 0.3, anisotropy: 0.8, anisotropyRotation: Math.PI / 2, envMapIntensity: 0.8 }), тень: 'фото', текстура: { имя: 'металл-шлифованный', шаг: 0.3, вращение: Math.PI / 2 } },
   латунь: { создать: ф({ color: '#d6b46a', metalness: 1, roughness: 0.3, anisotropy: 0.5, anisotropyRotation: Math.PI / 2 }), тень: 'фото' },
   хром: { создать: ф({ color: '#e6e8eb', metalness: 0.95, roughness: 0.08, envMapIntensity: 0.95 }), тень: 'фото' },
@@ -57,6 +67,23 @@ const КЛАССЫ: Record<КлассМодели, ОписаниеКласса>
   керамика: { создать: ф({ color: '#f3f3f0', roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.9 }), тень: 'всегда' },
   // порошковая белая эмаль кольца светильника
   'краска-белая': { создать: ф({ color: '#f1f1ee', metalness: 0, roughness: 0.42, clearcoat: 0.25, clearcoatRoughness: 0.3 }), тень: 'фото' },
+  // дерево: скан дуба, оттенок задаёт изделие (ножки стульев, столы, рамы)
+  дерево: { создать: ф({ color: '#ffffff', roughness: 0.6, clearcoat: 0.22, clearcoatRoughness: 0.45 }), тень: 'всегда', текстура: { имя: 'дуб', шаг: 0.6, вращение: Math.PI / 2, безЦвета: true } },
+  // кожа и экокожа: ровная, с мягким глянцем
+  кожа: { создать: ф({ color: '#ffffff', roughness: 0.5, clearcoat: 0.32, clearcoatRoughness: 0.4, sheen: 0.25, sheenRoughness: 0.6, sheenColor: new THREE.Color('#ffffff') }), тень: 'всегда' },
+  // гладкая ткань (велюр, подушки): мягкий отблеск по краю, без рисунка
+  ткань: { создать: ф({ color: '#ffffff', roughness: 1, sheen: 0.45, sheenRoughness: 0.6, sheenColor: new THREE.Color('#cfc9be') }), тень: 'всегда' },
+  // белая эмаль корпусов техники
+  'эмаль-белая': { создать: ф({ color: '#eceeee', metalness: 0, roughness: 0.3, clearcoat: 0.8, clearcoatRoughness: 0.18, envMapIntensity: 1 }), тень: 'всегда' },
+  'пластик-светлый': { создать: ф({ color: '#e4e4e1', metalness: 0, roughness: 0.46, clearcoat: 0.2, clearcoatRoughness: 0.5 }), тень: 'всегда' },
+  // листва: тёмная к центру и светлая к краю (цвет вершин), мягкий отблеск
+  листва: { создать: ф({ color: '#5f8a4c', roughness: 0.62, sheen: 0.5, sheenRoughness: 0.5, sheenColor: new THREE.Color('#bfe3a0'), vertexColors: true, side: THREE.DoubleSide }), тень: 'всегда' },
+  земля: { создать: ф({ color: '#35261c', roughness: 1 }), тень: 'фото' },
+  // зеркало: серебро с минимальной шероховатостью, отражает комнату
+  'зеркало-м': { создать: ф({ color: '#e8ecee', metalness: 1, roughness: 0.03, envMapIntensity: 1.1 }), тень: 'фото' },
+  // тюль: лёгкая полупрозрачная вуаль
+  тюль: { создать: ф({ color: '#f4f1ea', roughness: 1, transparent: true, opacity: 0.55, side: THREE.DoubleSide, depthWrite: false, sheen: 0.6, sheenColor: new THREE.Color('#ffffff') }), тень: 'нет' },
+  штора: { создать: ф({ color: '#ffffff', roughness: 1, sheen: 1, sheenRoughness: 0.55, sheenColor: new THREE.Color('#d8d2c6'), side: THREE.DoubleSide }), тень: 'всегда' },
   берёза: { создать: ф({ color: '#d9bd8f', roughness: 0.62, clearcoat: 0.15, clearcoatRoughness: 0.5 }), тень: 'всегда' },
 };
 
@@ -166,7 +193,7 @@ export function материалКласса(к: КлассМодели): THREE.
   (м as THREE.MeshStandardMaterial).envMap = окружениеКласса(к);
   кэш.set(к, м);
   if (о.текстура) {
-    const { имя, шаг, вращение } = о.текстура;
+    const { имя, шаг, вращение, безЦвета } = о.текстура;
     const мат = м as THREE.MeshPhysicalMaterial;
     void загрузитьКарты(имя).then((т) => {
       if (!т) return;
@@ -177,7 +204,7 @@ export function материалКласса(к: КлассМодели): THREE.
           x.rotation = вращение;
         }
       }
-      мат.map = т.map;
+      if (!безЦвета) мат.map = т.map;
       мат.roughnessMap = т.roughnessMap;
       if (т.normalMap) {
         мат.normalMap = т.normalMap;
