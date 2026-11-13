@@ -36,6 +36,8 @@ const CPU = Number(process.env.ЗАМЕР_CPU || 1);
 const СОСТАВ = process.env.ЗАМЕР_СОСТАВ || 'пустые';
 /** каждый-кадр | по-изменению */
 const ТЕНИ = process.env.ЗАМЕР_ТЕНИ || 'каждый-кадр';
+/** Проход 1: профиль качества замера — VERSTAK_QUALITY=fast | standard | photo (по умолчанию «авто» проекта) */
+const КАЧЕСТВО = { fast: 'слабый ноутбук', standard: 'высокое', photo: 'фото' }[process.env.VERSTAK_QUALITY || ''] || null;
 const ПЕРЕТАСКИВАНИЕ = process.env.ЗАМЕР_ПЕРЕТАСКИВАНИЕ !== '0';
 
 const puppeteer = require(PUPPETEER);
@@ -52,7 +54,7 @@ async function страницаПриложения(браузер) {
 
 /** Выполняется в странице: собрать проект из N модулей и загрузить (через v1 и миграцию — как в замерах этапов 0 и 1А-1) */
 async function загрузитьN(стр, N) {
-  return стр.evaluate(async (N, состав) => {
+  return стр.evaluate(async (N, состав, качество) => {
     const useКухня = window.__верстакStore ?? (await import('/src/store/index.ts')).useКухня;
     const { КАТАЛОГ } = await import('/src/data/modules.ts');
     const { новый_проект, пустая_комната } = await import('/src/types.ts');
@@ -81,8 +83,13 @@ async function загрузитьN(стр, N) {
       });
     }
     useКухня.getState().загрузитьV1(п);
-    return { модулей: N, длинаКомнаты: длина, типов: корпуса.length, состав };
-  }, N, СОСТАВ);
+    if (качество) {
+      // профиль качества из настроек проекта: ядро применяет его при синхронизации
+      const с = useКухня.getState();
+      с.загрузить({ ...с.проект2, настройки: { ...с.проект2.настройки, качество } });
+    }
+    return { модулей: N, длинаКомнаты: длина, типов: корпуса.length, состав, качество: качество ?? 'авто' };
+  }, N, СОСТАВ, КАЧЕСТВО);
 }
 
 /** Выполняется в странице: N секунд рисовать каждый кадр и считать */
@@ -130,7 +137,8 @@ async function мерить(стр, секунд, тени) {
         я.проверитьФаску(t);
         if (тени === 'каждый-кадр') gl.shadowMap.needsUpdate = true;
         const t0 = performance.now();
-        gl.render(scene, camera);
+        // «Фото»: кадр через постобработку ядра (GTAO, bloom, OutputPass)
+        if (!(я.профиль?.фото && я.отрисоватьФото())) gl.render(scene, camera);
         времяРендера.push(performance.now() - t0);
         calls = gl.info.render.calls;
         triangles = gl.info.render.triangles;
