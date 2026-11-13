@@ -96,7 +96,9 @@ const ПРОФИЛИ: Record<string, [number, number][]> = {
 
 function точёная(вид: string, d: number, h: number): THREE.BufferGeometry {
   const пр = (ПРОФИЛИ[вид] ?? ПРОФИЛИ.кнопка).map(([x, y]) => new THREE.Vector2(Math.max(0.0001, x * (d / 2)), y * h - h / 2));
-  const г = new THREE.LatheGeometry(пр, 40);
+  // чем мельче деталь, тем меньше граней по окружности (шляпки, кнопки, колпачки)
+  const сегм = d < 0.04 ? 14 : d < 0.09 ? 24 : 40;
+  const г = new THREE.LatheGeometry(пр, сегм);
   г.computeVertexNormals();
   return uvПоМетрам(г);
 }
@@ -259,11 +261,14 @@ export function геометрияМодели(ключ: string): THREE.BufferGe
   switch (вид) {
     case 'брус': {
       const r = Math.max(0.0003, Math.min(м(3), м(0) / 2 - 0.0002, м(1) / 2 - 0.0002, м(2) / 2 - 0.0002));
-      г = uvПоМетрам(new RoundedBoxGeometry(м(0), м(1), м(2), Number(ч[4] ?? 3), r));
+      // скругление дорогое (300 треугольников при 2 сегментах): у мелких деталей и острых рёбер — меньше сегментов или обычный брус
+      const сегм = r < 0.0009 ? 0 : r < 0.003 ? 1 : Number(ч[4] ?? 3);
+      г = uvПоМетрам(сегм === 0 ? new THREE.BoxGeometry(м(0), м(1), м(2)) : new RoundedBoxGeometry(м(0), м(1), м(2), сегм, r));
       break;
     }
     case 'пруток':
-      г = пруток(м(0), м(1), Number(ч[2] ?? 16), true);
+      // тонкие прутки — меньше граней
+      г = пруток(м(0), м(1), м(0) < 0.008 ? 6 : м(0) < 0.016 ? Math.min(10, Number(ч[2] ?? 16)) : Number(ч[2] ?? 16), true);
       break;
     case 'трубка':
       г = пруток(м(0), м(1), Number(ч[2] ?? 24), false);
@@ -300,7 +305,7 @@ export function геометрияМодели(ключ: string): THREE.BufferGe
       break;
     case 'дуга': {
       // дуга трубы (излив смесителя): тор радиуса R, труба d, угол в градусах; лежит в плоскости XY от +X против часовой
-      г = new THREE.TorusGeometry(м(1), м(0) / 2, 16, 40, (Number(ч[2] ?? 180) * Math.PI) / 180);
+      г = new THREE.TorusGeometry(м(1), м(0) / 2, м(0) < 0.008 ? 5 : 12, Number(ч[2] ?? 180) > 200 ? 48 : 28, (Number(ч[2] ?? 180) * Math.PI) / 180);
       г = uvПоМетрам(г);
       break;
     }

@@ -120,11 +120,11 @@ export function примитивыАрки(W: number, H: number, G: number, цв
 }
 
 /** Изделия каталога «Окна и двери»: окно целиком; дверь — коробка, закрытое полотно, наличники */
-export function примитивыПроёма(изд: Pick<Изделие, 'id' | 'материалы'>, габ: Габариты): Примитив[] | null {
+export function примитивыПроёма(изд: Pick<Изделие, 'id'>, габ: Габариты, цвет?: string): Примитив[] | null {
   const { ш: W, г: G, в: H } = габ;
   if (изд.id.startsWith('окно')) return примитивыОкна(W, H, G);
   if (изд.id.startsWith('дверь')) {
-    const ц = изд.материалы.фасад?.startsWith('#') ? изд.материалы.фасад : '#ece8df';
+    const ц = цвет && цвет.startsWith('#') ? цвет : '#ece8df';
     const wП = W - 70;
     const hП = H - 36;
     const полотно = примитивыПолотнаДвери(wП, hП, 40, ц).map((п) => ({ ...п, t: [п.t[0], п.t[1] + 18 + hП / 2, п.t[2]] as [number, number, number] }));

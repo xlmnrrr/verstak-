@@ -59,7 +59,7 @@ const КЛАССЫ: Record<КлассМодели, ОписаниеКласса>
   пластик: { создать: ф({ color: '#121315', metalness: 0, roughness: 0.22, clearcoat: 0.6, clearcoatRoughness: 0.1 }), тень: 'всегда' },
   'металл-чёрный': { создать: ф({ color: '#1e1f22', metalness: 0.65, roughness: 0.5 }), тень: 'всегда' },
   лампа: { создать: () => new THREE.MeshStandardMaterial({ color: '#fff4dc', emissive: '#ffe7b8', emissiveIntensity: 6, roughness: 0.4 }), тень: 'нет' },
-  дисплей: { создать: () => new THREE.MeshStandardMaterial({ color: '#0b0b0b', emissive: '#ffae5c', emissiveIntensity: 1.3, roughness: 0.3 }), тень: 'нет' },
+  дисплей: { создать: () => new THREE.MeshStandardMaterial({ color: '#0b0b0b', emissive: '#ffae5c', emissiveIntensity: 0.7, roughness: 0.3 }), тень: 'нет' },
   // ткани: мягкий отблеск по краю (sheen), стёжка и ворс — normal-карта
   'ткань-стёганая': { создать: ф({ color: '#ffffff', roughness: 1, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color('#d8d4cc') }), тень: 'всегда', текстура: { имя: 'ткань-стёганая', шаг: 0.42 } },
   рогожка: { создать: ф({ color: '#ffffff', roughness: 1, sheen: 0.9, sheenRoughness: 0.55, sheenColor: new THREE.Color('#bdb6aa') }), тень: 'всегда', текстура: { имя: 'рогожка', шаг: 0.22 } },
@@ -205,7 +205,7 @@ export function материалКласса(к: КлассМодели): THREE.
         }
       }
       if (!безЦвета) мат.map = т.map;
-      мат.roughnessMap = т.roughnessMap;
+      if (!безЦвета) мат.roughnessMap = т.roughnessMap;
       if (т.normalMap) {
         мат.normalMap = т.normalMap;
         мат.normalScale.set(0.9, 0.9);
