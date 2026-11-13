@@ -155,8 +155,10 @@ async function мерить(стр, секунд, тени) {
     const худшие = сорт.slice(Math.floor(сорт.length * 0.99));
     const ср1 = худшие.reduce((a, b) => a + b, 0) / (худшие.length || 1);
     const срРендер = времяРендера.reduce((a, b) => a + b, 0) / времяРендера.length;
+    const топ = кадры.map((dt, i) => [i, +dt.toFixed(1), +(времяРендера[i + 1] ?? 0).toFixed(1)]).sort((a, b) => b[1] - a[1]).slice(0, 12);
     const ст = к.статистика();
     return {
+      худшие_кадры_индекс_мс_рендер: топ,
       видеокарта,
       профиль: ст.профиль,
       msaa: ст.msaa,

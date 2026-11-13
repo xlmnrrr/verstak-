@@ -238,6 +238,32 @@ export function применитьПрофильМоделей(фото: boolean
   }
 }
 
+/**
+ * Прогрев шейдеров: все классы материалов моделей компилируются заранее (невидимыми инстансами далеко под полом),
+ * чтобы первый показ нового класса не давал задержку кадра (особенно при медленном процессоре). Асинхронно, без остановки кадров.
+ */
+export async function прогретьМатериалыМоделей(gl: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera): Promise<void> {
+  const г = new THREE.BoxGeometry(0.001, 0.001, 0.001);
+  const корень = new THREE.Group();
+  корень.position.set(0, -500, 0);
+  for (const к of Object.keys(КЛАССЫ) as КлассМодели[]) {
+    const m = new THREE.InstancedMesh(г, материалКласса(к), 1);
+    m.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array([1, 1, 1]), 3);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    корень.add(m);
+  }
+  scene.add(корень);
+  try {
+    await gl.compileAsync(scene, camera);
+  } catch {
+    /* прогрев не обязателен */
+  } finally {
+    scene.remove(корень);
+    г.dispose();
+  }
+}
+
 export function освободитьМатериалыМоделей() {
   for (const м of кэш.values()) м.dispose();
   кэш.clear();
