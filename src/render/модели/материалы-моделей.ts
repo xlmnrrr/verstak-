@@ -21,7 +21,8 @@ export type КлассМодели =
   | 'дисплей'
   | 'ткань-стёганая'
   | 'рогожка'
-  | 'берёза';
+  | 'берёза'
+  | 'керамика';
 
 interface ОписаниеКласса {
   создать: () => THREE.MeshPhysicalMaterial | THREE.MeshStandardMaterial;
@@ -51,6 +52,8 @@ const КЛАССЫ: Record<КлассМодели, ОписаниеКласса>
   // ткани: мягкий отблеск по краю (sheen), стёжка и ворс — normal-карта
   'ткань-стёганая': { создать: ф({ color: '#ffffff', roughness: 1, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color('#d8d4cc') }), тень: 'всегда', текстура: { имя: 'ткань-стёганая', шаг: 0.42 } },
   рогожка: { создать: ф({ color: '#ffffff', roughness: 1, sheen: 0.9, sheenRoughness: 0.55, sheenColor: new THREE.Color('#bdb6aa') }), тень: 'всегда', текстура: { имя: 'рогожка', шаг: 0.22 } },
+  // санфаянс: белая глазурь, глянец (clearcoat)
+  керамика: { создать: ф({ color: '#f3f3f0', roughness: 0.2, clearcoat: 1, clearcoatRoughness: 0.06, envMapIntensity: 0.9 }), тень: 'всегда' },
   берёза: { создать: ф({ color: '#d9bd8f', roughness: 0.62, clearcoat: 0.15, clearcoatRoughness: 0.5 }), тень: 'всегда' },
 };
 
