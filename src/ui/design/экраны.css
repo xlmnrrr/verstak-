@@ -245,3 +245,5 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .смета-итог { margin: var(--о-3) 0; padding: var(--о-3); border-radius: var(--р-поле); background: var(--поверх-2); font-size: var(--т-14, 14px); }
 .смета-итог b { font-size: 18px; color: var(--латунь); font-family: 'JetBrains Mono', ui-monospace, monospace; }
 .смета-итог span { color: var(--текст-3); font-size: var(--т-13); }
+.смета-таблица { table-layout: fixed; }
+.смета-таблица th:nth-child(1) { width: 54%; } .смета-таблица th:nth-child(2) { width: 14%; } .смета-таблица th:nth-child(3) { width: 16%; } .смета-таблица th:nth-child(4) { width: 16%; }
