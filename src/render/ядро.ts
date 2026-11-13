@@ -1040,7 +1040,7 @@ export class Ядро {
       gtao.blendIntensity = 0.9;
       к.addPass(gtao);
       // порог выше бликов металла на солнце: светятся только лампы (свечение > 4,5)
-      к.addPass(new UnrealBloomPass(new THREE.Vector2(размер.x, размер.y), 0.25, 0.35, 4.5));
+      к.addPass(new UnrealBloomPass(new THREE.Vector2(размер.x, размер.y), 0.22, 0.3, 10));
       к.addPass(new OutputPass());
       this.композитор = { к, gtao, ш: размер.x, в: размер.y, dpr };
     }

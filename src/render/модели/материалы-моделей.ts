@@ -58,7 +58,7 @@ const КЛАССЫ: Record<КлассМодели, ОписаниеКласса>
   резина: { создать: ф({ color: '#1b1c1e', metalness: 0, roughness: 0.88 }), тень: 'фото' },
   пластик: { создать: ф({ color: '#121315', metalness: 0, roughness: 0.22, clearcoat: 0.6, clearcoatRoughness: 0.1 }), тень: 'всегда' },
   'металл-чёрный': { создать: ф({ color: '#1e1f22', metalness: 0.65, roughness: 0.5 }), тень: 'всегда' },
-  лампа: { создать: () => new THREE.MeshStandardMaterial({ color: '#fff4dc', emissive: '#ffe7b8', emissiveIntensity: 6, roughness: 0.4 }), тень: 'нет' },
+  лампа: { создать: () => new THREE.MeshStandardMaterial({ color: '#fff4dc', emissive: '#ffe7b8', emissiveIntensity: 16, roughness: 0.4 }), тень: 'нет' },
   дисплей: { создать: () => new THREE.MeshStandardMaterial({ color: '#0b0b0b', emissive: '#ffae5c', emissiveIntensity: 0.7, roughness: 0.3 }), тень: 'нет' },
   // ткани: мягкий отблеск по краю (sheen), стёжка и ворс — normal-карта
   'ткань-стёганая': { создать: ф({ color: '#ffffff', roughness: 1, sheen: 1, sheenRoughness: 0.45, sheenColor: new THREE.Color('#d8d4cc') }), тень: 'всегда', текстура: { имя: 'ткань-стёганая', шаг: 0.42 } },

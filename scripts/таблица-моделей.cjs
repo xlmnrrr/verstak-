@@ -13,7 +13,7 @@ const статусыПуть = path.join(корень, 'docs', 'статусы-�
 const выход = path.join(корень, 'docs', 'прогресс-моделей.md');
 
 // каталог через esbuild
-const tmp = path.join(корень, '.tmp-табл.ts');
+const tmp = '.tmp-табл.ts';
 fs.writeFileSync(
   tmp,
   `import { КАТАЛОГ_V2 } from './src/model/каталог/index';
