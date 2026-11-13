@@ -8,7 +8,33 @@
  */
 import * as THREE from 'three';
 
-export type ФормаГеометрии = 'плита' | 'плита-фаска' | 'цилиндр' | 'сфера' | 'конус';
+export type ФормаГеометрии = 'плита' | 'плита-фаска' | 'цилиндр' | 'сфера' | 'конус' | 'сектор' | 'обод';
+
+/**
+ * Диск 3/4 (карусель углового модуля): радиус 0,5, высота 1, ось Y, центр в нуле; нет четверти −X / +Z
+ * (вырез к створкам). `обод` — бортик по дуге того же диска, стенка 1 % диаметра.
+ */
+function сектор270(внутр: number): THREE.BufferGeometry {
+  const ф = new THREE.Shape();
+  if (внутр <= 0) {
+    ф.moveTo(0, 0);
+    ф.lineTo(0, -0.5);
+    ф.absarc(0, 0, 0.5, -Math.PI / 2, Math.PI, false);
+    ф.lineTo(0, 0);
+  } else {
+    ф.moveTo(0, -0.5);
+    ф.absarc(0, 0, 0.5, -Math.PI / 2, Math.PI, false);
+    ф.lineTo(-внутр, 0);
+    ф.absarc(0, 0, внутр, Math.PI, -Math.PI / 2, true);
+    ф.lineTo(0, -0.5);
+  }
+  const g = new THREE.ExtrudeGeometry(ф, { depth: 1, bevelEnabled: false, curveSegments: 36 });
+  // фигура в XY → ось выдавливания в +Y; координата y фигуры уходит в −Z, вырез III четверти → (−X, +Z)
+  g.rotateX(-Math.PI / 2);
+  g.translate(0, -0.5, 0);
+  g.deleteAttribute('uv');
+  return g;
+}
 
 const кэш = new Map<ФормаГеометрии, THREE.BufferGeometry>();
 
@@ -153,6 +179,12 @@ export function геометрияФормы(форма: ФормаГеомет�
     case 'конус':
       г = new THREE.ConeGeometry(0.5, 1, 20, 1, false);
       г.deleteAttribute('uv');
+      break;
+    case 'сектор':
+      г = сектор270(0);
+      break;
+    case 'обод':
+      г = сектор270(0.49);
       break;
   }
   кэш.set(форма, г);
