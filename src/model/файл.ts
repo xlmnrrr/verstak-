@@ -119,7 +119,7 @@ const НастройкиZ = z.looseObject({
   фон: z.string().optional(),
   шаг_сетки: Число.positive().optional(),
   толщина_плиты: z.union([z.literal(16), z.literal(18)]).optional(),
-  качество: z.enum(['авто', 'высокое', 'среднее', 'слабый ноутбук']).optional(),
+  качество: z.enum(['авто', 'высокое', 'среднее', 'слабый ноутбук', 'фото']).optional(),
   режим_обзора: z.enum(['сверху', 'прогулка']).optional(),
   свободная_сборка: z.boolean().optional(),
 });

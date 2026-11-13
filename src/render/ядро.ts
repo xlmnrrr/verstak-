@@ -5,6 +5,13 @@
  */
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { применитьПрофильМоделей, установитьОкружениеМоделей } from './модели/материалы-моделей';
 import { границыКонтура, высотаДляРендера } from '../model/помещение';
 import { проверитьВлезает, type Проблема } from '../model/проверка';
 import type { ПроектV2 } from '../model/типы';
@@ -151,6 +158,10 @@ export class Ядро {
 
     this.материалы = создатьМатериалы(this.профиль.шейдер);
     this.сборщик = new СборщикСцены(scene, this.материалы);
+    this.сборщик.приЗагрузкеМодели = () => {
+      this.тени.запросить();
+      this.попроситьКадр();
+    };
     this.тени = new Тени(gl, scene);
     this.пол = new ПолПомещения(scene, this.материалы.пол, () => this.попроситьКадр());
     this.стрелки = new Стрелки(scene);
@@ -389,6 +400,7 @@ export class Ядро {
       this.тени.установитьСолнце(час);
       this.сборщик.установитьТеньСтен(час !== null);
       this.обновитьЛампы();
+      this.применитьОкружение();
       this.попроситьКадр();
     }
     if (u.показатьКлиенту !== this.клиентБыл) {
@@ -445,12 +457,17 @@ export class Ядро {
   /** Для проверок: принудительно «настоящая» (все изделия с фаской) или «шейдер» (ни одного); 'авто' — по расстоянию */
   режимФаски: 'авто' | 'шейдер' | 'настоящая' = 'авто';
   private применённыйРежимФаски = 'авто';
+  private числоФасок = 0;
 
   проверитьФаску(сейчас: number) {
-    if (this.режимФаски !== 'авто') {
-      if (this.применённыйРежимФаски !== this.режимФаски) {
-        this.применённыйРежимФаски = this.режимФаски;
-        this.сборщик.установитьФаски(this.режимФаски === 'настоящая' ? new Set(this.сборщик.идыЭкземпляров()) : new Set());
+    // «Фото»: настоящая фаска у всех изделий (новые изделия добавляются в набор при следующей проверке)
+    const режим = this.режимФаски === 'авто' && this.профиль.фото ? 'настоящая' : this.режимФаски;
+    if (режим !== 'авто') {
+      const все = режим === 'настоящая' ? this.сборщик.идыЭкземпляров() : [];
+      if (this.применённыйРежимФаски !== режим || (режим === 'настоящая' && все.length !== this.числоФасок)) {
+        this.применённыйРежимФаски = режим;
+        this.числоФасок = все.length;
+        this.сборщик.установитьФаски(new Set(все));
         this.попроситьКадр();
       }
       return;
@@ -511,6 +528,12 @@ export class Ядро {
       р.п = с.проект2.помещения;
       р.а = с.помещениеАктивное;
       this.применитьПроект(с.проект2, с.помещениеАктивное, было === undefined);
+    }
+    const качество = с.проект2.настройки.качество;
+    if (качество !== this.режимКачества) {
+      this.режимКачества = качество;
+      const имя: ИмяПрофиля = качество === 'авто' ? this.видеокарта.профиль : качество;
+      this.применитьПрофиль(ПРОФИЛИ[имя], 'настройка');
     }
     const фонЭфф = this.эффективныйФон(с.проект2.настройки.фон);
     if (фонЭфф !== this.фонТекущий) this.установитьФон(фонЭфф);
@@ -887,18 +910,100 @@ export class Ядро {
     this.о.setDpr(Math.min(window.devicePixelRatio || 1, п.dprМакс));
     this.тени.применитьПрофиль(п);
     this.материалы.применитьПрофиль(п.шейдер);
-    if (п.отражения && !this.окружение) {
+    if (!this.окружение) {
       const pmrem = new THREE.PMREMGenerator(this.о.gl);
       this.окружение = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
       pmrem.dispose();
     }
-    scene.environment = п.отражения ? this.окружение : null;
-    scene.environmentIntensity = 0.18;
+    this.сборщик.установитьФото(п.фото);
+    применитьПрофильМоделей(п.фото);
+    useUI.setState({ фотоРежим: п.фото && this.режим === 'редактор' });
+    this.применитьОкружение();
     const фон = useКухня.getState().проект2.настройки.фон || '#171a1f';
     scene.fog = п.туман ? new THREE.Fog(фон, 18, 60) : null;
     this.lod.сброс();
     this.журнал.push(`профиль «${п.имя}» (${причина})`);
     this.попроситьКадр();
+  }
+
+  /* ------------------------------------------------------------ окружение HDRI (docs/модели.md §0, п. 6) */
+
+  private hdri = new Map<string, THREE.Texture>();
+  private hdriЗагрузка = new Map<string, Promise<THREE.Texture | null>>();
+
+  /** HDRI 1K из папки приложения (Poly Haven, CC0): днём пустая светлая комната, вечером комната отеля */
+  private загрузитьHDRI(имя: string): Promise<THREE.Texture | null> {
+    let п = this.hdriЗагрузка.get(имя);
+    if (!п) {
+      п = new HDRLoader()
+        .loadAsync(`./Библиотека/окружение/${имя}.hdr`)
+        .then((т) => {
+          if (this.освобождено) return null;
+          т.mapping = THREE.EquirectangularReflectionMapping;
+          const pmrem = new THREE.PMREMGenerator(this.о.gl);
+          const к = pmrem.fromEquirectangular(т).texture;
+          pmrem.dispose();
+          т.dispose();
+          this.hdri.set(имя, к);
+          return к;
+        })
+        .catch(() => {
+          this.журнал.push(`окружение «${имя}» не загрузилось — остаётся RoomEnvironment`);
+          return null;
+        });
+      this.hdriЗагрузка.set(имя, п);
+    }
+    return п;
+  }
+
+  /** Окружение по профилю и времени суток: плитам — слабое общее, моделям — своё (металл и стекло отражают комнату) */
+  private применитьОкружение() {
+    const п = this.профиль;
+    const { scene } = this.о;
+    const час = this.последнийЧас;
+    const имя = час != null && (час >= 19 || час < 7.5) ? 'hotel_room' : 'empty_play_room';
+    const готово = п.hdri ? this.hdri.get(имя) : undefined;
+    const env = готово ?? this.окружение;
+    scene.environment = п.отражения ? env : null;
+    scene.environmentIntensity = готово ? п.силаОкружения : 0.18;
+    установитьОкружениеМоделей(env, this.окружение);
+    if (п.hdri && !готово) void this.загрузитьHDRI(имя).then((т) => т && this.профиль.hdri && this.применитьОкружение());
+    this.попроситьКадр();
+  }
+
+  /* ------------------------------------------------------------ «Фото»: GTAO, bloom, OutputPass */
+
+  private композитор: { к: EffectComposer; gtao: GTAOPass; ш: number; в: number; dpr: number } | null = null;
+
+  /** Кадр «Фото»: основной рендер в цель с глубиной → GTAO (нормали по глубине) → bloom ламп → тонмаппинг ACES. false — не рисовал */
+  отрисоватьФото(): boolean {
+    if (!this.профиль.фото || this.освобождено) return false;
+    const { gl, scene, camera } = this.о;
+    const размер = gl.getSize(new THREE.Vector2());
+    const dpr = gl.getPixelRatio();
+    const к0 = this.композитор;
+    if (!к0 || к0.ш !== размер.x || к0.в !== размер.y || к0.dpr !== dpr) {
+      к0?.к.dispose();
+      const ш = Math.round(размер.x * dpr);
+      const в = Math.round(размер.y * dpr);
+      const цель = new THREE.WebGLRenderTarget(ш, в, { type: THREE.HalfFloatType, samples: 4 });
+      цель.depthTexture = new THREE.DepthTexture(ш, в);
+      const к = new EffectComposer(gl, цель);
+      к.setPixelRatio(dpr);
+      к.setSize(размер.x, размер.y);
+      к.addPass(new RenderPass(scene, camera));
+      const gtao = new GTAOPass(scene, camera, ш, в, { depthTexture: к.renderTarget1.depthTexture ?? undefined });
+      gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 16 });
+      gtao.updatePdMaterial({ lumaPhi: 10, depthPhi: 2, normalPhi: 3, radius: 6, rings: 2, samples: 16 });
+      gtao.blendIntensity = 0.9;
+      к.addPass(gtao);
+      // порог выше бликов металла на солнце: светятся только лампы (свечение > 4,5)
+      к.addPass(new UnrealBloomPass(new THREE.Vector2(размер.x, размер.y), 0.25, 0.35, 4.5));
+      к.addPass(new OutputPass());
+      this.композитор = { к, gtao, ш: размер.x, в: размер.y, dpr };
+    }
+    this.композитор!.к.render();
+    return true;
   }
 
   private переключитьКачество(имя: ИмяПрофиля, причина: string) {
@@ -1059,6 +1164,8 @@ export class Ядро {
     this.пол.освободить();
     this.материалы.освободить();
     this.окружение?.dispose();
+    for (const т of this.hdri.values()) т.dispose();
+    this.композитор?.к.dispose();
     this.о.scene.onBeforeRender = () => {};
   }
 }

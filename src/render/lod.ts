@@ -8,6 +8,8 @@ import * as THREE from 'three';
 
 export const ВИДИМАЯ_ФАСКА_ПИКС = 1.5;
 export const РАДИУС_ФАСКИ_М = 0.002;
+/** Детальные модели (петли, полкодержатели, внутренности техники) — не ближе этого порога, даже если фаска уже не видна */
+export const ПОРОГ_ДЕТАЛЕЙ_М = 3.5;
 
 /** Расстояние включения (м) для высоты холста в пикселях */
 export function расстояниеВключения(высотаПикс: number, fovГрад: number): number {
@@ -45,7 +47,7 @@ export class ВыборФаски {
     this.позиция.copy(this.камера.position);
     this.камера.getWorldDirection(this.взгляд);
     const p: [number, number, number] = [this.камера.position.x, this.камера.position.y, this.камера.position.z];
-    const вкл = расстояниеВключения(высотаПикс, this.камера.fov);
+    const вкл = Math.max(ПОРОГ_ДЕТАЛЕЙ_М, расстояниеВключения(высотаПикс, this.камера.fov));
     const кандидаты: { id: string; d: number }[] = [];
     if (лимит > 0) {
       for (const id of this.идыВсех()) {
