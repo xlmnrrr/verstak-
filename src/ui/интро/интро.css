@@ -1,0 +1,295 @@
+/* Вступление при запуске: тёмная мастерская, чертёжная синька, латунь. Тайминги синхронны с сцена3d.ts (секунды от старта). */
+.интро {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #15110e;
+  overflow: hidden;
+  font-family: 'Onest', system-ui, sans-serif;
+  color: #f3ece1;
+  transition: opacity 0.9s ease;
+}
+.интро.уходит {
+  opacity: 0;
+  pointer-events: none;
+}
+.интро-холст {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  display: block;
+}
+.интро-виньетка {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(8, 6, 4, 0.55) 100%);
+}
+
+/* ---------- логотип: сетка, знак линиями, имя */
+.интро-логотип {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  animation: лого-уход 1.1s ease-in 4.3s forwards;
+}
+@keyframes лого-уход {
+  to {
+    opacity: 0;
+    transform: scale(1.06);
+    filter: blur(6px);
+  }
+}
+.интро-сетка {
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(rgba(120, 160, 210, 0.13) 1px, transparent 1px), linear-gradient(90deg, rgba(120, 160, 210, 0.13) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0%, transparent 72%);
+  opacity: 0;
+  animation: сетка-вход 1.6s ease-out 0.15s forwards;
+}
+@keyframes сетка-вход {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.интро-знак {
+  width: clamp(170px, 22vmin, 280px);
+  height: auto;
+  position: relative;
+  overflow: visible;
+  filter: drop-shadow(0 6px 26px rgba(217, 173, 95, 0.18));
+}
+.интро-знак rect,
+.интро-знак path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+.л-столешница {
+  stroke: #d9ad5f;
+  stroke-width: 1.4;
+  animation: рисовать 1s ease-out 0.7s forwards, закрасить-латунь 0.6s ease-out 1.55s forwards;
+}
+.л-ножка {
+  stroke: #f3ece1;
+  stroke-width: 1.2;
+  animation: рисовать 0.7s ease-out 1.8s forwards, закрасить-светлое 0.5s ease-out 2.35s forwards;
+}
+.л-н2 {
+  animation-delay: 1.95s, 2.45s;
+}
+.л-перекладина {
+  stroke: #f3ece1;
+  stroke-width: 2.5;
+  animation: рисовать 0.5s ease-out 2.45s forwards;
+}
+.л-размер {
+  stroke: #6fa3dc;
+  stroke-width: 2.4;
+  animation: рисовать 1s ease-in-out 2.5s forwards;
+}
+.л-стрелка {
+  fill: #6fa3dc !important;
+  stroke: none !important;
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+  opacity: 0;
+  animation: проявить 0.4s ease-out 3.35s forwards;
+}
+@keyframes рисовать {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes закрасить-латунь {
+  to {
+    fill: #d9ad5f;
+  }
+}
+@keyframes закрасить-светлое {
+  to {
+    fill: #f3ece1;
+  }
+}
+@keyframes проявить {
+  to {
+    opacity: 1;
+  }
+}
+.интро-имя {
+  display: flex;
+  gap: clamp(8px, 1.4vmin, 18px);
+  font-weight: 700;
+  font-size: clamp(34px, 6.2vmin, 74px);
+  letter-spacing: 0.12em;
+  position: relative;
+}
+.интро-имя span {
+  opacity: 0;
+  transform: translateY(14px);
+  filter: blur(6px);
+  animation: буква 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@keyframes буква {
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+.интро-слоган {
+  position: relative;
+  font-size: clamp(13px, 2vmin, 20px);
+  letter-spacing: 0.08em;
+  color: #b9ad9b;
+  opacity: 0;
+  animation: проявить 0.9s ease-out 3.85s forwards;
+}
+
+/* ---------- подписи на стройке */
+.интро-подписи {
+  position: absolute;
+  left: clamp(28px, 5vw, 80px);
+  bottom: clamp(36px, 9vh, 96px);
+  pointer-events: none;
+}
+.интро-подпись {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(80vw, 760px);
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.интро-подпись.видна {
+  opacity: 1;
+  transform: none;
+}
+.интро-подпись b {
+  display: block;
+  font-size: clamp(26px, 4.4vmin, 54px);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-shadow: 0 3px 24px rgba(0, 0, 0, 0.7);
+}
+.интро-подпись b::after {
+  /* размерная линия с засечками под заголовком */
+  content: '';
+  display: block;
+  height: 14px;
+  margin: 10px 0 8px;
+  width: min(60%, 420px);
+  border-top: 2px solid #6fa3dc;
+  background: linear-gradient(#6fa3dc, #6fa3dc) left top / 2px 14px no-repeat, linear-gradient(#6fa3dc, #6fa3dc) right top / 2px 14px no-repeat;
+}
+.интро-подпись span {
+  font-size: clamp(14px, 2.2vmin, 22px);
+  color: #d4c7b3;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, 0.8);
+}
+.интро-знак-угол {
+  position: absolute;
+  top: clamp(18px, 3.5vh, 40px);
+  right: clamp(24px, 4vw, 60px);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  font-size: clamp(14px, 2vmin, 20px);
+  text-transform: uppercase;
+  color: #d9ad5f;
+  opacity: 0;
+  transition: opacity 1s ease;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+}
+.интро-знак-угол.видна {
+  opacity: 0.9;
+}
+
+/* ---------- кнопки */
+.интро-кнопки {
+  position: absolute;
+  right: clamp(20px, 3vw, 44px);
+  bottom: clamp(20px, 4vh, 44px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  animation: проявить 0.5s ease-out both;
+}
+.интро-пропуск {
+  min-height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(243, 236, 225, 0.35);
+  background: rgba(21, 17, 14, 0.55);
+  color: #f3ece1;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+.интро-пропуск:hover {
+  border-color: #d9ad5f;
+  color: #d9ad5f;
+}
+.интро-тихо {
+  border: 0;
+  background: none;
+  color: rgba(243, 236, 225, 0.55);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.интро-тихо:hover {
+  color: #f3ece1;
+}
+
+/* приложение появляется после вступления */
+@keyframes появление-приложения {
+  from {
+    opacity: 0;
+    transform: scale(1.015);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.приложение-появление {
+  animation: появление-приложения 0.9s ease-out both;
+}
+
+.после-интро {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: #15110e;
+  pointer-events: none;
+  animation: после-интро 1s ease-out forwards;
+}
+@keyframes после-интро {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

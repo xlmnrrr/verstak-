@@ -8,6 +8,7 @@ import { useUI } from './store/интерфейс';
 import { АКЦЕНТЫ } from './ui/Экраны';
 import { Спрайт } from './ui/design/Иконки';
 import { запуститьАвтосохранение } from './store/автосохранение';
+import { Интро, вступлениеНужно } from './ui/Интро';
 
 /** Тема интерфейса: «система» следует за Windows, выбор хранится в приложении */
 function useТема() {
@@ -57,6 +58,16 @@ export default function App() {
     н.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => н.disconnect();
   }, [акцент, тема]);
+  const вступлениеВкл = useUI((u) => u.вступление);
+  // вступление: при запуске (если включено) и по кнопке в «Настройках» (событие кухня:вступление)
+  const [вступление, setВступление] = useState(() => вступлениеНужно(useUI.getState().вступление));
+  const [послеВступления, setПослеВступления] = useState(false);
+  useEffect(() => {
+    const показать = () => setВступление(true);
+    window.addEventListener('кухня:вступление', показать);
+    return () => window.removeEventListener('кухня:вступление', показать);
+  }, []);
+  void вступлениеВкл;
   const турПройден = useUI((u) => u.туркПройден);
   const закрытьТур = () => useUI.getState().установить({ туркПройден: true });
 
@@ -178,9 +189,26 @@ export default function App() {
   else if (экран === 'комната') содержимое = <Мастер />;
   else содержимое = <Редактор ошибка3D={ошибка3D} />;
 
+  if (вступление) {
+    return (
+      <>
+        <Спрайт />
+        <Интро
+          закончено={() => {
+            setВступление(false);
+            setПослеВступления(true);
+            setTimeout(() => setПослеВступления(false), 1200);
+          }}
+          большеНеПоказывать={() => useUI.getState().установить({ вступление: false })}
+        />
+      </>
+    );
+  }
+
   return (
     <>
       <Спрайт />
+      {послеВступления && <div className="после-интро" aria-hidden="true" />}
       {содержимое}
       <ОкноПоверх />
       {экран === 'меню' && !турПройден && <ПервыйЗапуск закрыть={закрытьТур} />}

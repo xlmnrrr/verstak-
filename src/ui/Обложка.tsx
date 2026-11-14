@@ -124,6 +124,11 @@ export function Обложка() {
             <b>Пример кухни</b>
             <span />
           </button>
+          <button className="действие" type="button" onClick={() => useUI.getState().открытьОкно('идеи')}>
+            <Иконка имя="звезда" />
+            <b>Идеи от Claude</b>
+            <span />
+          </button>
         </div>
         <div className="обложка-низ-лево">
           <div className="ряд-кнопок">

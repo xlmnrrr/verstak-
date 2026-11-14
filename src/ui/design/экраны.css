@@ -247,3 +247,47 @@ h4.подзаголовок { margin: 12px 0 6px; font-size: 13px; font-weight: 
 .смета-итог span { color: var(--текст-3); font-size: var(--т-13); }
 .смета-таблица { table-layout: fixed; }
 .смета-таблица th:nth-child(1) { width: 54%; } .смета-таблица th:nth-child(2) { width: 14%; } .смета-таблица th:nth-child(3) { width: 16%; } .смета-таблица th:nth-child(4) { width: 16%; }
+
+/* «Идеи от Claude» */
+.идеи .подсказка {
+  color: var(--текст-2);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.идеи-список {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 12px;
+}
+.идея {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--линия, rgba(255, 255, 255, 0.12));
+  background: var(--поверх-2);
+}
+.идея h4 {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.3;
+}
+.идея p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--текст-2);
+}
+.идея ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--текст-2);
+}
+.идея .кн {
+  margin-top: auto;
+  align-self: flex-start;
+}

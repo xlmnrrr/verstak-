@@ -1,6 +1,8 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('кухня', {
+  // автотесты (своя папка данных или отладочный порт): вступление не показывается
+  тест: !!(process.env.VERSTAK_DATA_DIR || (process.argv || []).some((а) => String(а).startsWith('--remote-debugging-port'))),
   список: () => ipcRenderer.invoke('проекты:список'),
   сохранить: (имя, текст, превью) => ipcRenderer.invoke('проекты:сохранить', имя, текст, превью),
   открыть: (имя) => ipcRenderer.invoke('проекты:открыть', имя),
